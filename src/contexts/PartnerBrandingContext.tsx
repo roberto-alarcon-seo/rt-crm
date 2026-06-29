@@ -209,7 +209,7 @@ export function PartnerBrandingProvider({ children }: { children: ReactNode }) {
         // Dev override: ?partner=xxx guarda el id en localStorage.
         // Si el partner NO existe en esta DB (ej: brokia en mlslatam-dev),
         // usamos el static config directamente sin necesidad de un row en DB.
-        const devOverride = localStorage.getItem("brokia-partner-dev");
+        const devOverride = localStorage.getItem("rtcrm-partner-dev") ?? localStorage.getItem("brokia-partner-dev");
         if (devOverride && PARTNERS[devOverride] && !data.find((p) => p.id === devOverride)) {
           if (!cancelled) setPartner(staticToBranding(PARTNERS[devOverride]));
           setIsLoading(false);
