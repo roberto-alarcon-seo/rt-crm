@@ -52,7 +52,7 @@ export default function SettingsOpportunityAgent() {
     <SettingsLayout
       title="Agente de Oportunidades"
       description="Configura el agente que mantiene vivo el pipeline comercial"
-      icon={<TrendingUp className="w-5 h-5" />}
+      icon={TrendingUp}
     >
       <div className="space-y-6">
 

@@ -42,7 +42,7 @@ export default function SettingsSDRAgent() {
     <SettingsLayout
       title="Agente SDR"
       description="Configura el agente de captación y calificación de leads B2B"
-      icon={<Bot className="w-5 h-5" />}
+      icon={Bot}
     >
       <div className="space-y-6">
 

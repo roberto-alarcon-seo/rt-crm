@@ -17,13 +17,13 @@ const loginSchema = z.object({
 const TenantLogin = () => {
   const navigate = useNavigate();
   const { signIn, signOut, user, isSuperAdmin, isLoading: authLoading } = useAuth();
-  const { partner } = usePartnerBranding();
+  const { partner, isLoading: brandingLoading } = usePartnerBranding();
   const { theme } = useTheme();
   // "partner" and "light" both render with the light html class
   const isLight = theme === 'light' || theme === 'partner';
   const loginLogoSrc = isLight
-    ? (partner.logoExpandedLightUrl ?? partner.logoUrl)            // light: variante claro → icon fallback
-    : (partner.sidebarLogoExpandedUrl ?? partner.logoUrl);         // dark: expandido oscuro → icon fallback
+    ? (partner.logoExpandedLightUrl ?? partner.logoCollapsedLightUrl ?? partner.logoUrl ?? partner.logoMarkUrl ?? null)
+    : (partner.sidebarLogoExpandedUrl ?? partner.logoUrl ?? partner.logoMarkUrl ?? null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -97,12 +97,18 @@ const TenantLogin = () => {
         {/* Card: visible on desktop, transparent/flat on mobile */}
         <div className="relative sm:rounded-[28px] sm:bg-card/80 sm:backdrop-blur-2xl sm:border sm:border-border sm:px-10 sm:py-12 sm:shadow-2xl px-0 py-0">
           {/* Logo */}
-          <div className="flex justify-center mb-8 sm:mb-7">
-            <img
-              src={loginLogoSrc}
-              alt={`${partner.name} Logo`}
-              className="h-14 sm:h-12 w-auto object-contain max-w-[200px]"
-            />
+          <div className="flex justify-center mb-8 sm:mb-7 min-h-[56px] sm:min-h-[48px] items-center">
+            {brandingLoading ? (
+              <div className="h-14 sm:h-12 w-[160px] rounded-lg bg-muted/40 animate-pulse" />
+            ) : loginLogoSrc ? (
+              <img
+                src={loginLogoSrc}
+                alt={`${partner.name} Logo`}
+                className="h-14 sm:h-12 w-auto object-contain max-w-[200px]"
+              />
+            ) : (
+              <span className="text-xl font-bold text-foreground tracking-tight">{partner.name}</span>
+            )}
           </div>
 
           {/* Title */}
