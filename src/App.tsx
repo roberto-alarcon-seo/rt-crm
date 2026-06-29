@@ -71,7 +71,6 @@ import AIAssistant from "./pages/AIAssistant";
 import SettingsSDRAgent from "./pages/settings/SettingsSDRAgent";
 import SettingsOpportunityAgent from "./pages/settings/SettingsOpportunityAgent";
 import SettingsConversions from "./pages/settings/SettingsConversions";
-import SettingsExpedientes from "./pages/settings/SettingsExpedientes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -223,8 +222,8 @@ const App = () => (
               <Route path="/settings/ai-config" element={<ProtectedRoute><MainLayout><SettingsAIConfig /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/sdr-agent" element={<ProtectedRoute><MainLayout><SettingsSDRAgent /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/opportunity-agent" element={<ProtectedRoute><MainLayout><SettingsOpportunityAgent /></MainLayout></ProtectedRoute>} />
-              {/* Legacy agent routes redirect to SDR agent */}
-              <Route path="/settings/captacion-agent" element={<Navigate to="/settings/sdr-agent" replace />} />
+              {/* Legacy RE agent routes — redirect to opportunity agent */}
+              <Route path="/settings/captacion-agent" element={<Navigate to="/settings/opportunity-agent" replace />} />
               <Route path="/settings/followup-agent" element={<Navigate to="/settings/opportunity-agent" replace />} />
               <Route path="/settings/appointment-agent" element={<Navigate to="/settings/sdr-agent" replace />} />
               <Route path="/settings/knowledge-base" element={<ProtectedRoute><MainLayout><SettingsKnowledgeBase /></MainLayout></ProtectedRoute>} />
@@ -235,7 +234,7 @@ const App = () => (
               <Route path="/settings/quick-automations" element={<Navigate to="/settings/whatsapp" replace />} />
               <Route path="/settings/assignment-rules" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><SettingsAssignmentRules /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/templates" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><Templates /></MainLayout></ProtectedRoute>} />
-              <Route path="/settings/expedientes" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><SettingsExpedientes /></MainLayout></ProtectedRoute>} />
+              <Route path="/settings/expedientes" element={<Navigate to="/settings" replace />} />
               <Route path="/settings/team" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><SettingsTeamPage /></MainLayout></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><MainLayout><SettingsProfilePage /></MainLayout></ProtectedRoute>} />
               {/* Redirects for removed sections */}

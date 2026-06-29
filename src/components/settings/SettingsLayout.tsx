@@ -4,8 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   MessageSquare,
   Settings as SettingsIcon, ListPlus, Bot, BookOpen, Code2, ShieldCheck, BarChart3,
-  MessagesSquare, Brain, UserSquare2, Sparkles, FileText, Users, Home, RefreshCw, CalendarCheck,
-  FolderOpen, Building2,
+  MessagesSquare, Brain, UserSquare2, Sparkles, FileText, Users, RefreshCw, TrendingUp,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -46,16 +46,24 @@ const menuItems: MenuItem[] = [
     id: "ai-config",
     path: "/settings/ai-config",
     icon: Bot,
-    title: "Agente de Calificación",
-    description: "Comportamiento del agente",
+    title: "Agente IA General",
+    description: "Comportamiento base del agente",
     group: "Inteligencia",
   },
   {
-    id: "captacion-agent",
-    path: "/settings/captacion-agent",
-    icon: Home,
-    title: "Agente de Captación",
-    description: "Flujo para vendedores",
+    id: "sdr-agent",
+    path: "/settings/sdr-agent",
+    icon: Bot,
+    title: "Agente SDR",
+    description: "Calificación de leads B2B",
+    group: "Inteligencia",
+  },
+  {
+    id: "opportunity-agent",
+    path: "/settings/opportunity-agent",
+    icon: TrendingUp,
+    title: "Agente de Oportunidades",
+    description: "Seguimiento de pipeline",
     group: "Inteligencia",
   },
   {
@@ -64,14 +72,6 @@ const menuItems: MenuItem[] = [
     icon: RefreshCw,
     title: "Agente de Seguimiento",
     description: "Re-enganche automático",
-    group: "Inteligencia",
-  },
-  {
-    id: "appointment-agent",
-    path: "/settings/appointment-agent",
-    icon: CalendarCheck,
-    title: "Agente de Agendamiento",
-    description: "Confirmación de citas",
     group: "Inteligencia",
   },
   {
@@ -107,15 +107,6 @@ const menuItems: MenuItem[] = [
     group: "Leads",
   },
   {
-    id: "expedientes",
-    path: "/settings/expedientes",
-    icon: FolderOpen,
-    title: "Flujos de expediente",
-    description: "Documentos por etapa y crédito",
-    group: "Expedientes",
-    requireRoles: ["administrador"],
-  },
-  {
     id: "team",
     path: "/settings/team",
     icon: Building2,
@@ -144,12 +135,11 @@ const menuItems: MenuItem[] = [
   },
 ];
 
-const groupOrder = ["Canales", "Inteligencia", "Leads", "Expedientes", "Organización", "Avanzado"] as const;
+const groupOrder = ["Canales", "Inteligencia", "Leads", "Organización", "Avanzado"] as const;
 const groupIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   Canales: MessagesSquare,
   Inteligencia: Brain,
   Leads: UserSquare2,
-  Expedientes: FolderOpen,
   Organización: Building2,
   Avanzado: Sparkles,
 };
@@ -184,6 +174,7 @@ export function SettingsLayout({ children, title, description, icon: Icon }: Set
     meta_ads: false,
     automations: false,
     templates: false,
+    brokia_ia_studio: false,
   };
   const isItemUnlocked = (item: MenuItem) =>
     !item.unlockFlags || item.unlockFlags.some((f) => flagState[f]);
