@@ -1,0 +1,473 @@
+/**
+ * Partner Theme Engine
+ * --------------------
+ * Centralizes the design tokens that each partner can customize.
+ * Tokens are persisted as JSON in `partners.branding` and applied
+ * at runtime as CSS variables on `document.documentElement`.
+ */
+
+export interface PartnerTheme {
+  /** Background of the main app surface (body / main area). HSL "H S% L%" */
+  app_bg: string;
+  /** Background for cards and elevated containers. HSL */
+  card_bg: string;
+  /** Sidebar background. HSL */
+  sidebar_bg: string;
+  /** Sidebar text + icon color. HSL */
+  sidebar_text: string;
+  /** Sidebar visual style. */
+  sidebar_style: "solid" | "gradient" | "contrast";
+  /** Primary / accent color (used for buttons, active states, links). HSL */
+  primary_color: string;
+  /**
+   * Surface mode. Controls foreground/text and border tokens so light
+   * presets (white app bg) render readable text instead of inheriting the
+   * default dark theme tokens. Defaults to "dark" when missing.
+   */
+  mode?: "dark" | "light";
+  /** Optional preset key the user picked, for UX recall. */
+  theme_preset?: string;
+  /**
+   * Optional horizontal logo shown when the sidebar is expanded.
+   * Falls back to `partners.logo_url` (square/icon logo) when null.
+   */
+  sidebar_logo_expanded_url?: string | null;
+  /** Light-sidebar variant of the collapsed (icon) logo. Falls back to `partners.logo_url`. */
+  logo_collapsed_light_url?: string | null;
+  /** Light-sidebar variant of the expanded (horizontal) logo. Falls back to sidebar_logo_expanded_url. */
+  logo_expanded_light_url?: string | null;
+  /**
+   * Color of outgoing chat bubbles. HSL "H S% L%".
+   * Defaults to primary_color when not set.
+   */
+  message_outgoing_color?: string;
+}
+
+/** Convert "#RRGGBB" to "H S% L%" string used in CSS variables */
+export function hexToHslString(hex: string): string {
+  const cleaned = hex.replace("#", "");
+  if (!/^[0-9a-fA-F]{6}$/.test(cleaned)) return "0 0% 0%";
+  const r = parseInt(cleaned.substring(0, 2), 16) / 255;
+  const g = parseInt(cleaned.substring(2, 4), 16) / 255;
+  const b = parseInt(cleaned.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
+/** Convert "H S% L%" back to "#RRGGBB" for color picker inputs. */
+export function hslStringToHex(hsl: string): string {
+  const m = hsl.trim().match(/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+  if (!m) return "#000000";
+  const h = parseFloat(m[1]) / 360;
+  const s = parseFloat(m[2]) / 100;
+  const l = parseFloat(m[3]) / 100;
+  const hue2rgb = (p: number, q: number, t: number) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  let r: number, g: number, b: number;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  const toHex = (x: number) =>
+    Math.round(x * 255)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+/** Lighten/darken a HSL string by delta lightness percentage points. */
+function shiftLightness(hsl: string, deltaL: number): string {
+  const m = hsl.trim().match(/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/);
+  if (!m) return hsl;
+  const h = parseFloat(m[1]);
+  const s = parseFloat(m[2]);
+  const l = Math.max(0, Math.min(100, parseFloat(m[3]) + deltaL));
+  return `${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%`;
+}
+
+/** Built-in presets shown in the theme picker grid. */
+export const THEME_PRESETS: Record<string, { label: string; description: string; theme: PartnerTheme }> = {
+  brokia_dark: {
+    label: "Brokia Dark",
+    description: "Oscuro con acento morado",
+    theme: {
+      app_bg: "0 0% 6%",
+      card_bg: "0 0% 10%",
+      sidebar_bg: "0 0% 8%",
+      sidebar_text: "220 9% 70%",
+      sidebar_style: "solid",
+      primary_color: "279 65% 49%",
+      theme_preset: "brokia_dark",
+    },
+  },
+  carbon_gray: {
+    label: "Gris Carbón",
+    description: "Oscuro neutro con acento azul",
+    theme: {
+      app_bg: "0 0% 14%",
+      card_bg: "0 0% 18%",
+      sidebar_bg: "0 0% 11%",
+      sidebar_text: "0 0% 75%",
+      sidebar_style: "solid",
+      primary_color: "199 89% 48%",
+      theme_preset: "carbon_gray",
+    },
+  },
+  mls_standard: {
+    label: "Verde MLS",
+    description: "Oscuro azulado con acento verde",
+    theme: {
+      app_bg: "220 13% 12%",
+      card_bg: "220 13% 16%",
+      sidebar_bg: "220 13% 9%",
+      sidebar_text: "150 20% 80%",
+      sidebar_style: "solid",
+      primary_color: "152 76% 40%",
+      theme_preset: "mls_standard",
+    },
+  },
+  responde_pro: {
+    label: "Morado Pro",
+    description: "Muy oscuro con sidebar degradado",
+    theme: {
+      app_bg: "260 15% 8%",
+      card_bg: "260 15% 12%",
+      sidebar_bg: "260 20% 6%",
+      sidebar_text: "270 25% 80%",
+      sidebar_style: "gradient",
+      primary_color: "270 75% 60%",
+      theme_preset: "responde_pro",
+    },
+  },
+  white_red: {
+    label: "Blanco Rojo",
+    description: "Fondo claro, botones en rojo",
+    theme: {
+      app_bg: "340 33% 99%",
+      card_bg: "0 0% 100%",
+      sidebar_bg: "220 26% 14%",
+      sidebar_text: "220 9% 70%",
+      sidebar_style: "solid",
+      primary_color: "4 74% 54%",
+      mode: "light",
+      theme_preset: "white_red",
+    },
+  },
+  white_blue: {
+    label: "Blanco Azul",
+    description: "Fondo claro, botones en azul",
+    theme: {
+      app_bg: "210 40% 98%",
+      card_bg: "0 0% 100%",
+      sidebar_bg: "220 26% 14%",
+      sidebar_text: "220 9% 70%",
+      sidebar_style: "solid",
+      primary_color: "217 91% 52%",
+      mode: "light",
+      theme_preset: "white_blue",
+    },
+  },
+  white_green: {
+    label: "Blanco Verde",
+    description: "Fondo claro, botones en verde",
+    theme: {
+      app_bg: "138 20% 98%",
+      card_bg: "0 0% 100%",
+      sidebar_bg: "220 26% 14%",
+      sidebar_text: "220 9% 70%",
+      sidebar_style: "solid",
+      primary_color: "152 76% 36%",
+      mode: "light",
+      theme_preset: "white_green",
+    },
+  },
+  slate_orange: {
+    label: "Pizarra Naranja",
+    description: "Oscuro azulado con acento naranja",
+    theme: {
+      app_bg: "215 28% 10%",
+      card_bg: "215 28% 14%",
+      sidebar_bg: "215 28% 7%",
+      sidebar_text: "215 15% 72%",
+      sidebar_style: "solid",
+      primary_color: "25 95% 55%",
+      theme_preset: "slate_orange",
+    },
+  },
+  white_total: {
+    label: "Blanco Total",
+    description: "Todo claro: sidebar y fondo blancos, texto negro",
+    theme: {
+      app_bg: "220 20% 97%",
+      card_bg: "0 0% 100%",
+      sidebar_bg: "0 0% 94%",
+      sidebar_text: "220 26% 20%",
+      sidebar_style: "solid",
+      primary_color: "217 91% 52%",
+      mode: "light",
+      theme_preset: "white_total",
+    },
+  },
+  mls_latam_light: {
+    label: "MLS LATAM Claro",
+    description: "Fondo blanco, sidebar negro, acento rojo-naranja, burbujas moradas",
+    theme: {
+      app_bg: "0 0% 97%",
+      card_bg: "0 0% 100%",
+      sidebar_bg: "0 0% 8%",
+      sidebar_text: "220 9% 70%",
+      sidebar_style: "solid",
+      primary_color: "9 78% 54%",
+      message_outgoing_color: "262 60% 55%",
+      mode: "light",
+      theme_preset: "mls_latam_light",
+    },
+  },
+  mls_latam_dark: {
+    label: "MLS LATAM Oscuro",
+    description: "Fondo grafito oscuro, sidebar negro, acento rojo-naranja, burbujas moradas",
+    theme: {
+      app_bg: "240 6% 8%",
+      card_bg: "240 5% 12%",
+      sidebar_bg: "0 0% 8%",
+      sidebar_text: "220 9% 52%",
+      sidebar_style: "solid",
+      primary_color: "9 78% 54%",
+      message_outgoing_color: "262 60% 55%",
+      mode: "dark",
+      theme_preset: "mls_latam_dark",
+    },
+  },
+  brokia_light: {
+    label: "Brokia Claro",
+    description: "Fondo lavanda, sidebar negro, acento morado",
+    theme: {
+      app_bg: "260 20% 96%",
+      card_bg: "0 0% 100%",
+      sidebar_bg: "0 0% 8%",
+      sidebar_text: "240 5% 65%",
+      sidebar_style: "solid",
+      primary_color: "262 83% 58%",
+      mode: "light",
+      theme_preset: "brokia_light",
+    },
+  },
+};
+
+/** App background presets for the dropdown selector. */
+export const APP_BG_PRESETS: { value: string; label: string }[] = [
+  { value: "0 0% 6%", label: "Oscuro Profundo" },
+  { value: "0 0% 14%", label: "Gris Carbón" },
+  { value: "220 13% 12%", label: "Azul Pizarra" },
+  { value: "260 15% 8%", label: "Morado Nocturno" },
+  { value: "0 0% 100%", label: "Blanco Puro (Claro)" },
+  { value: "0 0% 98%", label: "Gris Suave (Claro)" },
+];
+
+/** Sidebar style options. */
+export const SIDEBAR_STYLE_OPTIONS: { value: PartnerTheme["sidebar_style"]; label: string }[] = [
+  { value: "solid", label: "Color sólido" },
+  { value: "gradient", label: "Degradado" },
+  { value: "contrast", label: "Contraste" },
+];
+
+/** Default theme for a brand given a surface mode. */
+export function buildDefaultTheme(
+  primaryHsl?: string | null,
+  lightPresetKey?: string | null,
+  darkPresetKey?: string | null,
+  mode?: "light" | "dark" | null,
+): PartnerTheme {
+  const resolvedMode = mode ?? "light";
+  const presetKey = resolvedMode === "light"
+    ? (lightPresetKey ?? "brokia_light")
+    : (darkPresetKey ?? "brokia_dark");
+  const base = THEME_PRESETS[presetKey]?.theme ?? THEME_PRESETS.brokia_dark.theme;
+  return {
+    ...base,
+    primary_color: primaryHsl || base.primary_color,
+  };
+}
+
+/**
+ * Apply a partner theme to the document root by writing CSS variables.
+ * Safe to call from React effects; idempotent.
+ *
+ * When `options.userTheme` is provided ("dark" | "light"), surface tokens
+ * (background, card, foreground, secondary, muted, border, input, accent…)
+ * are NOT written so they fall back to the `.dark`/`.light` class in
+ * `index.css` — letting the user's chosen theme win. Brand tokens
+ * (primary, ring, sidebar, gradients, shadows) are always applied so the
+ * partner identity persists across modes.
+ */
+export function applyPartnerTheme(
+  theme: PartnerTheme,
+  options?: { userTheme?: "dark" | "light" },
+): void {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+
+  // Detect surface mode. Either explicit (`mode`) or inferred from the app_bg
+  // lightness: anything brighter than 50% lightness is treated as "light".
+  const explicitMode = theme.mode;
+  const lightnessMatch = theme.app_bg.trim().match(/(\d+(?:\.\d+)?)%\s*$/);
+  const inferredLight =
+    !!lightnessMatch && parseFloat(lightnessMatch[1]) >= 50;
+  const isLight = explicitMode ? explicitMode === "light" : inferredLight;
+
+  // Surface tokens — only applied in "partner" mode (no userTheme override).
+  // When the user pinned dark/light, these are left to the CSS class so the
+  // user's choice wins over partner branding.
+  const surfaceTokenNames = [
+    "--background",
+    "--card",
+    "--popover",
+    "--foreground",
+    "--card-foreground",
+    "--popover-foreground",
+    "--secondary",
+    "--secondary-foreground",
+    "--muted",
+    "--muted-foreground",
+    "--accent",
+    "--accent-foreground",
+    "--border",
+    "--input",
+    "--message-incoming",
+  ] as const;
+
+  if (options?.userTheme) {
+    // Clear any previously-set inline surface tokens so the .dark/.light
+    // class in index.css takes effect again.
+    for (const name of surfaceTokenNames) root.style.removeProperty(name);
+  } else {
+    // Core surfaces
+    root.style.setProperty("--background", theme.app_bg);
+    root.style.setProperty("--card", theme.card_bg);
+    root.style.setProperty("--popover", theme.card_bg);
+
+    // Text + ancillary tokens that flip with the surface mode
+    if (isLight) {
+      // Light mode — derive warm neutrals from the app background's hue so
+      // borders/secondary surfaces feel cohesive with the brand (per MLS spec
+      // they're slightly tinted vs pure gray).
+      const bgMatch = theme.app_bg.trim().match(
+        /^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%$/,
+      );
+      const bgHue = bgMatch ? Math.round(parseFloat(bgMatch[1])) : 340;
+      root.style.setProperty("--foreground", "220 26% 14%");
+      root.style.setProperty("--card-foreground", "220 26% 14%");
+      root.style.setProperty("--popover-foreground", "220 26% 14%");
+      root.style.setProperty("--secondary", `${bgHue} 20% 95%`);
+      root.style.setProperty("--secondary-foreground", "220 26% 14%");
+      root.style.setProperty("--muted", `${bgHue} 15% 93%`);
+      root.style.setProperty("--muted-foreground", "220 9% 46%");
+      // In light mode the accent matches the brand primary (per spec).
+      root.style.setProperty("--accent", theme.primary_color);
+      root.style.setProperty("--accent-foreground", "0 0% 100%");
+      root.style.setProperty("--border", `${bgHue} 15% 90%`);
+      root.style.setProperty("--input", "0 0% 100%");
+      root.style.setProperty("--message-incoming", `${bgHue} 15% 93%`);
+    } else {
+      root.style.setProperty("--foreground", "0 0% 100%");
+      root.style.setProperty("--card-foreground", "0 0% 100%");
+      root.style.setProperty("--popover-foreground", "0 0% 100%");
+      root.style.setProperty("--secondary", "0 0% 16%");
+      root.style.setProperty("--secondary-foreground", "0 0% 100%");
+      root.style.setProperty("--muted", "0 0% 16%");
+      root.style.setProperty("--muted-foreground", "220 9% 60%");
+      root.style.setProperty("--accent", "217 91% 60%");
+      root.style.setProperty("--accent-foreground", "0 0% 100%");
+      root.style.setProperty("--border", "0 0% 17%");
+      root.style.setProperty("--input", "0 0% 17%");
+      root.style.setProperty("--message-incoming", "0 0% 16%");
+    }
+  }
+
+  // Suppress unused-variable when surface block is skipped.
+  void isLight;
+
+  // Primary / accent
+  root.style.setProperty("--primary", theme.primary_color);
+  root.style.setProperty("--ring", theme.primary_color);
+  root.style.setProperty("--message-outgoing", theme.message_outgoing_color ?? theme.primary_color);
+
+  // Gradient + shadow tokens derived from the primary so brand elements
+  // (buttons, hover cards, glow effects) follow the partner accent.
+  const primaryGlow = shiftLightness(theme.primary_color, 10);
+  root.style.setProperty(
+    "--gradient-primary",
+    `linear-gradient(135deg, hsl(${theme.primary_color}), hsl(${primaryGlow}))`,
+  );
+  root.style.setProperty(
+    "--shadow-elegant",
+    `0 10px 30px -10px hsl(${theme.primary_color} / 0.3)`,
+  );
+  root.style.setProperty(
+    "--shadow-glow",
+    `0 0 40px hsl(${theme.primary_color} / 0.2)`,
+  );
+
+  // Sidebar
+  let sidebarBg = theme.sidebar_bg;
+  if (theme.sidebar_style === "contrast") {
+    // Contrast = nudge sidebar away from the app surface. On dark themes that
+    // means darker; on light themes that means slightly darker too (so the
+    // sidebar looks like a separate panel rather than blending with cards).
+    sidebarBg = shiftLightness(theme.sidebar_bg, isLight ? -2 : -3);
+  }
+  // Detect a light sidebar so accent/border shift downwards instead of up
+  // (otherwise white + lighten = invisible).
+  const sidebarLightnessMatch = sidebarBg.trim().match(/(\d+(?:\.\d+)?)%\s*$/);
+  const sidebarIsLight =
+    !!sidebarLightnessMatch && parseFloat(sidebarLightnessMatch[1]) >= 50;
+  const accentDelta = sidebarIsLight ? -5 : 4;
+  const borderDelta = sidebarIsLight ? -10 : 6;
+  root.style.setProperty("--sidebar-background", sidebarBg);
+  root.style.setProperty("--sidebar-foreground", theme.sidebar_text);
+  root.style.setProperty("--sidebar-primary", theme.primary_color);
+  root.style.setProperty("--sidebar-ring", theme.primary_color);
+  root.style.setProperty("--sidebar-accent", shiftLightness(sidebarBg, accentDelta));
+  root.style.setProperty("--sidebar-border", shiftLightness(sidebarBg, borderDelta));
+
+  // Optional gradient surface for the sidebar background
+  if (theme.sidebar_style === "gradient") {
+    root.style.setProperty(
+      "--sidebar-gradient",
+      `linear-gradient(180deg, hsl(${sidebarBg}) 0%, hsl(${shiftLightness(sidebarBg, -4)}) 100%)`,
+    );
+  } else {
+    root.style.removeProperty("--sidebar-gradient");
+  }
+}

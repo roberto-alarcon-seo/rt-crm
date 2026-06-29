@@ -1,0 +1,28 @@
+project_id = "intsmpmsvrwigdnpmvaj"
+
+[functions.twilio-inbound-webhook]
+verify_jwt = false
+
+[functions.sync-external-core]
+verify_jwt = false
+
+[functions.partner-test-email]
+verify_jwt = false
+
+[functions.seed-tenant-templates]
+verify_jwt = false
+
+[functions.auth-sso]
+verify_jwt = false
+
+[functions.ai-followup-agent]
+verify_jwt = false
+
+[functions.sync-template-status]
+verify_jwt = false
+
+[functions.ai-appointment-agent]
+verify_jwt = false
+
+[functions.ai-studio-insights]
+verify_jwt = false

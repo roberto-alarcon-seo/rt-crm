@@ -1,0 +1,541 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Structural tokens — never change */
+    --radius: 0.75rem;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 88% 50%;
+    --warning-foreground: 0 0% 0%;
+    --online: 142 60% 40%;
+
+    /* Surface defaults (dark) — overridden by .light / .dark classes */
+    --background: 240 6% 8%;
+    --foreground: 220 14% 93%;
+    --card: 240 5% 12%;
+    --card-foreground: 220 14% 93%;
+    --popover: 240 5% 14%;
+    --popover-foreground: 220 14% 93%;
+    --secondary: 240 4% 18%;
+    --secondary-foreground: 220 14% 80%;
+    --muted: 240 4% 18%;
+    --muted-foreground: 220 9% 52%;
+    --border: 240 4% 20%;
+    --input: 240 4% 16%;
+    --message-incoming: 240 5% 17%;
+    --primary-foreground: 0 0% 100%;
+    --accent-foreground: 0 0% 100%;
+    --sidebar-foreground: 220 9% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent-foreground: 220 14% 93%;
+
+    /* Brand tokens — always written by applyPartnerTheme() via inline styles.
+       These values are intentionally neutral so any bleed-through is safe. */
+    --primary: 0 0% 50%;
+    --ring: 0 0% 50%;
+    --accent: 0 0% 50%;
+    --sidebar-background: 240 5% 10%;
+    --sidebar-primary: 0 0% 50%;
+    --sidebar-accent: 240 4% 16%;
+    --sidebar-border: 240 4% 16%;
+    --sidebar-ring: 0 0% 50%;
+    --message-outgoing: 0 0% 50%;
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 50%), hsl(0 0% 60%));
+    --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 40px hsl(0 0% 0% / 0.1);
+  }
+
+  /* ===== DARK THEME ===== */
+  .dark {
+    /* Fondo principal: negro grafito suave, no puro */
+    --background: 240 6% 8%;
+    --foreground: 220 14% 93%;
+
+    /* Cards ligeramente elevadas sobre el fondo */
+    --card: 240 5% 12%;
+    --card-foreground: 220 14% 93%;
+
+    --popover: 240 5% 14%;
+    --popover-foreground: 220 14% 93%;
+
+    /* Surface tokens only — brand tokens come from applyPartnerTheme() */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 4% 18%;
+    --secondary-foreground: 220 14% 80%;
+
+    --muted: 240 4% 18%;
+    --muted-foreground: 220 9% 52%;
+
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 60% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 88% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 240 4% 20%;
+    --input: 240 4% 16%;
+
+    --sidebar-foreground: 220 9% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent-foreground: 220 14% 93%;
+
+    --message-incoming: 240 5% 17%;
+    --online: 142 60% 40%;
+  }
+
+  /* ===== LIGHT THEME — surface tokens only ===== */
+  .light {
+    --background: 260 20% 96%;
+    --foreground: 240 10% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 14% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14% 10%;
+
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 260 15% 93%;
+    --secondary-foreground: 240 10% 12%;
+
+    --muted: 260 15% 93%;
+    --muted-foreground: 240 5% 46%;
+
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 72% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 260 12% 89%;
+    --input: 0 0% 100%;
+
+    --sidebar-foreground: 240 5% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent-foreground: 0 0% 100%;
+
+    --message-incoming: 260 15% 93%;
+    --online: 142 72% 36%;
+  }
+
+  /* ===== BLUE THEME (Brokia Original) ===== */
+  .blue {
+    --background: 220 23% 14%;
+    --foreground: 0 0% 100%;
+
+    --card: 220 20% 18%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 220 20% 18%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 279 65% 49%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 18% 22%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 15% 25%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 279 65% 49%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 25 95% 60%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 15% 30%;
+    --input: 220 15% 25%;
+    --ring: 279 65% 49%;
+
+    /* Sidebar */
+    --sidebar-background: 220 20% 16%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 279 65% 49%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 18% 22%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 15% 30%;
+    --sidebar-ring: 279 65% 49%;
+
+    /* Messages */
+    --message-outgoing: 279 65% 49%;
+    --message-incoming: 220 18% 22%;
+    --online: 142 76% 45%;
+
+    /* Extras */
+    --gradient-primary: linear-gradient(135deg, hsl(279 65% 49%), hsl(279 65% 59%));
+    --shadow-elegant: 0 10px 30px -10px hsl(279 65% 49% / 0.3);
+    --shadow-glow: 0 0 40px hsl(279 65% 49% / 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* theme class (dark/light/blue) is set by JS */
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/80 backdrop-blur-xl;
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--primary)) 100%);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background: var(--gradient-primary);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+
+  .shadow-glow-sm {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.15);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* =====================================================================
+ * Dark theme — depth & gradient upgrade
+ * Adds ambient gradient background, layered surfaces, gradient primary
+ * buttons with glow, and refined borders. Light/blue themes untouched.
+ * ===================================================================== */
+@layer base {
+  .dark body {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(ellipse 70% 50% at 15% -10%, hsl(var(--sidebar-primary) / 0.15), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 110% 110%, hsl(var(--sidebar-primary) / 0.10), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, hsl(var(--sidebar-primary) / 0.08), transparent 70%);
+    background-attachment: fixed;
+  }
+
+  /* Subtle dotted texture overlay for depth */
+  .dark body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle at 1px 1px, hsl(0 0% 100% / 0.025) 1px, transparent 0);
+    background-size: 32px 32px;
+    z-index: 0;
+  }
+}
+
+@layer components {
+  /* Layered card surfaces with vertical gradient & top highlight */
+  .dark .bg-card {
+    background-image: linear-gradient(180deg, hsl(var(--card) / 1) 0%, hsl(var(--background)) 100%);
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.04),
+      0 1px 2px 0 hsl(0 0% 0% / 0.4);
+  }
+  .dark .bg-popover {
+    background-image: linear-gradient(180deg, hsl(var(--card) / 1) 0%, hsl(var(--background)) 100%);
+  }
+  .dark .bg-secondary,
+  .dark .bg-muted {
+    background-image: linear-gradient(180deg, hsl(var(--muted)) 0%, hsl(var(--background)) 100%);
+  }
+
+  /* Sidebar — subtle vertical depth gradient */
+  .dark [data-sidebar="sidebar"],
+  .dark .bg-sidebar {
+    background-image: linear-gradient(180deg, hsl(var(--sidebar-background)) 0%, hsl(var(--sidebar-background) / 0.85) 100%);
+    border-right: 1px solid hsl(0 0% 100% / 0.06);
+  }
+
+  /* Gradient primary buttons with glow — targets shadcn default variant */
+  .dark button.bg-primary,
+  .dark a.bg-primary,
+  .dark [role="button"].bg-primary {
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+    background-color: transparent;
+    box-shadow:
+      0 8px 22px -8px hsl(var(--primary) / 0.55),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.18);
+    transition: filter 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  }
+  .dark button.bg-primary:hover,
+  .dark a.bg-primary:hover,
+  .dark [role="button"].bg-primary:hover {
+    filter: brightness(1.08);
+    box-shadow:
+      0 10px 30px -8px hsl(var(--primary) / 0.7),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.22);
+  }
+  .dark button.bg-primary:active {
+    transform: translateY(0.5px) scale(0.99);
+  }
+
+  /* Subtle gradient borders */
+  .dark .border,
+  .dark .border-border {
+    border-color: hsl(0 0% 100% / 0.08);
+  }
+
+  /* Lift hover for interactive cards/rows */
+  .dark .bg-card:hover {
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.06),
+      0 8px 24px -12px hsl(279 70% 40% / 0.25);
+  }
+}
+
+@layer utilities {
+  /* Reusable gradient surface utility for hero/feature cards */
+  .surface-gradient {
+    background-image:
+      linear-gradient(135deg, hsl(279 60% 14% / 0.6) 0%, hsl(245 60% 12% / 0.4) 100%),
+      linear-gradient(180deg, hsl(0 0% 11%) 0%, hsl(0 0% 8%) 100%);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+  }
+
+  .gradient-border {
+    position: relative;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+  }
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--primary) / 0.15), transparent 70%);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Keep app content above the textured ::before overlay */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* =====================================================================
+ * Light (Enterprise) theme — clean surfaces, white sidebar, subtle depth
+ * ===================================================================== */
+@layer base {
+  .light body {
+    background-color: hsl(var(--background));
+    background-image: none;
+  }
+  .light body::before {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Cards: white, border #E5E7EB, radius 16px, shadow-small */
+  .light .bg-card {
+    background-image: none;
+    background-color: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .light .bg-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+  }
+  .light .bg-popover {
+    background-image: none;
+    background-color: #FFFFFF;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+    border: 1px solid #E5E7EB;
+  }
+  .light .bg-secondary,
+  .light .bg-muted {
+    background-image: none;
+  }
+
+  /* Sidebar */
+  .light [data-sidebar="sidebar"],
+  .light .bg-sidebar {
+    background-image: none;
+    background-color: hsl(var(--sidebar-background));
+    border-right: 1px solid hsl(var(--sidebar-border));
+    box-shadow: none;
+  }
+
+  /* Primary buttons */
+  .light button.bg-primary,
+  .light a.bg-primary,
+  .light [role="button"].bg-primary {
+    background-image: none;
+    background-color: hsl(var(--primary));
+    box-shadow: none;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .light button.bg-primary:hover,
+  .light a.bg-primary:hover,
+  .light [role="button"].bg-primary:hover {
+    background-color: hsl(var(--primary) / 0.88);
+    filter: none;
+    box-shadow: none;
+  }
+  .light button.bg-primary:active {
+    transform: translateY(1px);
+  }
+
+  /* Borders: #E5E7EB */
+  .light .border,
+  .light .border-border {
+    border-color: #E5E7EB;
+  }
+
+  /* Input focus ring */
+  .light input:focus,
+  .light textarea:focus,
+  .light select:focus {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.12);
+    outline: none;
+  }
+}
+
+/* Scrollbar inside dark sidebar (light theme) */
+.light aside ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.10);
+  border-radius: 9999px;
+}
+.light aside ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.20);
+}
+
+/* Richer scrollbar in dark mode */
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}

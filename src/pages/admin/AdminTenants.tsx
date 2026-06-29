@@ -1,0 +1,959 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Building2, Users, Search, MoreHorizontal, Loader2, MessageSquare, ExternalLink, Pause, Play, Trash2, Megaphone, Filter, Workflow, KeyRound, Target, RefreshCw, Copy, Check, Eye, EyeOff, Shield, FileText, TrendingUp, Sparkles, Home } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { supabase } from '@/integrations/supabase/client';
+import { TwilioConfigDialog } from '@/components/admin/TwilioConfigDialog';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { CreatePartnerDialog } from '@/components/admin/CreatePartnerDialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { z } from 'zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+
+interface Tenant {
+  id: string;
+  name: string;
+  plan: string;
+  status: string;
+  subscription_status?: string;
+  created_at: string;
+  users_count?: number;
+  contacts_count?: number;
+  billing_state?: string;
+  message_credits?: number;
+  monthly_credits_remaining?: number;
+  accumulated_credits?: number;
+  external_id?: string | null;
+  managed_externally?: boolean;
+  max_users?: number;
+  partner_id?: string | null;
+  partner?: { id: string; name: string } | null;
+  enabled_features?: string[] | null;
+}
+
+const PLAN_CONFIG = {
+  trial: { label: 'Trial' },
+  starter: { label: 'Starter' },
+  growth: { label: 'Growth' },
+  pro: { label: 'Pro' },
+  scale: { label: 'Scale' },
+  enterprise: { label: 'Enterprise' },
+};
+
+const tenantSchema = z.object({
+  name: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres').max(100),
+  ownerName: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres').max(100),
+  ownerEmail: z.string().trim().email('Email inválido'),
+  password: z.string()
+    .min(8, 'Mínimo 8 caracteres')
+    .regex(/[A-Z]/, 'Debe incluir al menos una mayúscula')
+    .regex(/\d/, 'Debe incluir al menos un número'),
+});
+
+const PASSWORD_REQS = [
+  { label: 'Mínimo 8 caracteres', test: (p: string) => p.length >= 8 },
+  { label: '1 mayúscula',          test: (p: string) => /[A-Z]/.test(p) },
+  { label: '1 número',             test: (p: string) => /\d/.test(p) },
+];
+
+function generatePassword(): string {
+  const upper   = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower   = 'abcdefghjkmnpqrstuvwxyz';
+  const numbers = '23456789';
+  const symbols = '!@#$%&*';
+  const all = upper + lower + numbers + symbols;
+  const pick = (s: string) => s[Math.floor(Math.random() * s.length)];
+  const base = [pick(upper), pick(numbers), pick(symbols),
+    ...Array.from({ length: 9 }, () => pick(all))];
+  return base.sort(() => Math.random() - 0.5).join('');
+}
+
+const AdminTenants = () => {
+  const navigate = useNavigate();
+  const { partnerScope } = useAuth();
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  // Preserve search across navigation (e.g. when returning from tenant detail).
+  const [searchQuery, setSearchQuery] = useState<string>(
+    () => sessionStorage.getItem('admin_tenants_search') ?? '',
+  );
+  useEffect(() => {
+    sessionStorage.setItem('admin_tenants_search', searchQuery);
+  }, [searchQuery]);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isCreatePartnerOpen, setIsCreatePartnerOpen] = useState(false);
+
+  const [twilioConfigOpen, setTwilioConfigOpen] = useState(false);
+  const [selectedTenantForTwilio, setSelectedTenantForTwilio] = useState<Tenant | null>(null);
+  const [tenantToSuspend, setTenantToSuspend] = useState<Tenant | null>(null);
+  const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '', ownerName: '', ownerEmail: '',
+    password: '', confirmPassword: '',
+    isTemporary: true, partnerId: '',
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [partners, setPartners] = useState<{ id: string; name: string }[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordCopied, setPasswordCopied] = useState(false);
+
+  const fetchTenants = async () => {
+    setIsLoading(true);
+    try {
+      let query = supabase
+        .from('tenants')
+        .select('*, partner:partners(id, name)')
+        .order('created_at', { ascending: false });
+      if (partnerScope) {
+        query = query.eq('partner_id', partnerScope);
+      }
+      const { data: tenantsData, error } = await query;
+      if (error) throw error;
+
+      const tenantsWithCounts = await Promise.all(
+        (tenantsData || []).map(async (tenant) => {
+          // Count ALL profiles in tenant (every profile = 1 seat, incl. owner/admin).
+          const { count } = await supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('tenant_id', tenant.id);
+          return { ...tenant, users_count: count || 0, contacts_count: 0 };
+        })
+      );
+
+      setTenants(tenantsWithCounts);
+    } catch (error) {
+      console.error('Error fetching tenants:', error);
+      toast.error('Error al cargar los tenants');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTenants();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partnerScope]);
+
+  useEffect(() => {
+    if (partnerScope) return; // partner-scoped admins don't need the list
+    supabase.from('partners').select('id, name').eq('is_active', true).order('name')
+      .then(({ data }) => { if (data) setPartners(data); });
+  }, [partnerScope]);
+
+  const copyPassword = async () => {
+    if (!formData.password) return;
+    await navigator.clipboard.writeText(formData.password);
+    setPasswordCopied(true);
+    setTimeout(() => setPasswordCopied(false), 2000);
+  };
+
+  const applyGeneratedPassword = () => {
+    const pwd = generatePassword();
+    setFormData(d => ({ ...d, password: pwd, confirmPassword: pwd }));
+    setShowPassword(true);
+  };
+
+  const handleCreateTenant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormErrors({});
+
+    // Password confirmation check before Zod
+    if (formData.password !== formData.confirmPassword) {
+      setFormErrors({ confirmPassword: 'Las contraseñas no coinciden' });
+      return;
+    }
+
+    // Partner required for global admins
+    if (!partnerScope && !formData.partnerId) {
+      setFormErrors({ partnerId: 'Selecciona un partner' });
+      return;
+    }
+
+    const result = tenantSchema.safeParse(formData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      result.error.errors.forEach((err) => { errors[err.path[0] as string] = err.message; });
+      setFormErrors(errors);
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const resolvedPartnerId = partnerScope || formData.partnerId || null;
+
+      // Validate partner exists + active
+      if (resolvedPartnerId) {
+        const { data: partnerRow, error: partnerErr } = await supabase
+          .from('partners').select('id, is_active').eq('id', resolvedPartnerId).maybeSingle();
+        if (partnerErr || !partnerRow?.id || partnerRow.is_active !== true) {
+          toast.error('El partner seleccionado no es válido o no está activo.');
+          setIsCreating(false);
+          return;
+        }
+      }
+
+      const { data: tenant, error: tenantError } = await supabase
+        .from('tenants')
+        .insert({
+          name: formData.name,
+          plan: 'trial',
+          status: 'trial',
+          billing_state: 'CREDITS_EXHAUSTED',
+          message_credits: 0,
+          monthly_credits_remaining: 0,
+          accumulated_credits: 0,
+          initial_credits_granted: false,
+          max_users: 5,
+          ...(resolvedPartnerId ? { partner_id: resolvedPartnerId } : {}),
+        })
+        .select()
+        .single();
+      if (tenantError) throw tenantError;
+
+      const { data: inviteData, error: inviteError } = await supabase.functions.invoke('admin-invite-owner', {
+        body: {
+          tenantId: tenant.id,
+          ownerEmail: formData.ownerEmail,
+          ownerName: formData.ownerName,
+          password: formData.password,
+          isTemporary: formData.isTemporary,
+        },
+      });
+
+      if (inviteError || !inviteData?.success) {
+        await supabase.from('tenants').delete().eq('id', tenant.id);
+        throw new Error(inviteData?.error || inviteError?.message || 'Error al crear el administrador');
+      }
+
+      toast.success(
+        formData.isTemporary
+          ? 'Tenant creado. El usuario deberá cambiar su contraseña en el primer acceso.'
+          : 'Tenant creado. El usuario ya puede iniciar sesión con las credenciales proporcionadas.'
+      );
+      setIsCreateOpen(false);
+      setFormData({ name: '', ownerName: '', ownerEmail: '', password: '', confirmPassword: '', isTemporary: true, partnerId: '' });
+      setShowPassword(false);
+      fetchTenants();
+    } catch (error: any) {
+      console.error('Error creating tenant:', error);
+      toast.error(error.message || 'Error al crear el tenant');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const filteredTenants = tenants.filter((t) =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getPlanLabel = (plan: string) => PLAN_CONFIG[plan as keyof typeof PLAN_CONFIG]?.label || plan;
+
+  const getStatusBadgeVariant = (status: string, sub?: string) => {
+    if (sub === 'cancel_pending') return 'destructive' as const;
+    switch (status) {
+      case 'active':
+        return 'default' as const;
+      case 'suspended':
+        return 'destructive' as const;
+      case 'trial':
+        return 'secondary' as const;
+      default:
+        return 'secondary' as const;
+    }
+  };
+
+  const getStatusLabel = (status: string, sub?: string) => {
+    if (sub === 'cancel_pending') return 'Cancelación programada';
+    switch (status) {
+      case 'active':
+        return 'Activo';
+      case 'suspended':
+        return 'Suspendido';
+      case 'trial':
+        return 'Prueba';
+      default:
+        return status;
+    }
+  };
+
+  const getCreditStatusColor = (credits: number, billingState?: string) => {
+    if (billingState === 'CREDITS_EXHAUSTED' || credits <= 0) return 'text-destructive';
+    if (credits <= 100) return 'text-warning';
+    return 'text-success';
+  };
+
+  const getCreditStatusLabel = (credits: number, billingState?: string) => {
+    if (billingState === 'SUBSCRIBED_ACTIVE') return 'Suscrito';
+    if (billingState === 'CREDITS_EXHAUSTED' || credits <= 0) return 'Sin saldo';
+    if (credits <= 100) return 'Bajo';
+    return 'Activo';
+  };
+
+  // Visual styles per partner. Uses semantic-friendly tailwind utilities so it
+  // adapts to the active theme while still giving each partner a distinct color.
+  const PARTNER_STYLES: Record<string, { label: string; className: string }> = {
+    mls_latam: {
+      label: 'MLS Latam',
+      className: 'border-emerald-500/40 text-emerald-400 bg-emerald-500/10',
+    },
+    responde: {
+      label: 'Responde',
+      className: 'border-violet-500/40 text-violet-400 bg-violet-500/10',
+    },
+    brokia: {
+      label: 'Brokia24',
+      className: 'border-indigo-500/40 text-indigo-400 bg-indigo-500/10',
+    },
+  };
+
+  const renderPartnerBadge = (tenant: Tenant) => {
+    if (!tenant.partner_id) {
+      return (
+        <Badge variant="outline" className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Sin asignar
+        </Badge>
+      );
+    }
+    const style = PARTNER_STYLES[tenant.partner_id];
+    const label = style?.label ?? tenant.partner?.name ?? tenant.partner_id;
+    const className =
+      style?.className ?? 'border-muted-foreground/40 text-muted-foreground bg-muted/20';
+    if (partnerScope) {
+      return (
+        <Badge variant="outline" className={`text-[10px] uppercase tracking-wider ${className}`}>
+          {label}
+        </Badge>
+      );
+    }
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(`/admin/partners/${tenant.partner_id}`);
+        }}
+        title="Gestionar partner"
+      >
+        <Badge variant="outline" className={`text-[10px] uppercase tracking-wider cursor-pointer hover:opacity-80 ${className}`}>
+          {label}
+        </Badge>
+      </button>
+    );
+  };
+
+  const renderFeatureIcons = (tenant: Tenant) => {
+    const features = Array.isArray(tenant.enabled_features) ? tenant.enabled_features : [];
+    if (features.length === 0) return null;
+    const ALL_MODULES: { key: string; label: string; Icon: typeof Megaphone; className: string }[] = [
+      { key: 'campaigns',                   label: 'Campañas',               Icon: Megaphone,   className: 'bg-blue-500/10 text-blue-400' },
+      { key: 'segments',                    label: 'Segmentos',              Icon: Filter,      className: 'bg-violet-500/10 text-violet-400' },
+      { key: 'automations_builder',         label: 'Automatizaciones',       Icon: Workflow,    className: 'bg-orange-500/10 text-orange-400' },
+      { key: 'api_access',                  label: 'API & Webhooks',         Icon: KeyRound,    className: 'bg-green-500/10 text-green-400' },
+      { key: 'conversions_capi',            label: 'Conversiones (CAPI)',    Icon: Target,      className: 'bg-rose-500/10 text-rose-400' },
+      { key: 'custom_templates_management', label: 'Plantillas Pro',         Icon: FileText,    className: 'bg-amber-500/10 text-amber-400' },
+      { key: 'inventory_management',        label: 'Inventario',             Icon: Home,        className: 'bg-teal-500/10 text-teal-400' },
+      { key: 'meta_ads',                    label: 'Meta Ads',               Icon: TrendingUp,  className: 'bg-indigo-500/10 text-indigo-400' },
+      { key: 'brokia_ia_studio',            label: 'Brokia IA Studio',       Icon: Sparkles,    className: 'bg-purple-500/10 text-purple-400' },
+    ];
+    const active = ALL_MODULES.filter((m) => features.includes(m.key));
+    if (active.length === 0) return null;
+    return (
+      <TooltipProvider>
+        <div className="flex items-center gap-1 mt-1 flex-wrap">
+          {active.map(({ key, label, Icon, className }) => (
+            <Tooltip key={key}>
+              <TooltipTrigger asChild>
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded ${className}`}>
+                  <Icon className="h-3 w-3" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium text-xs">{label}</span>
+                  <span className="text-[10px] text-green-400">● Activo</span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </TooltipProvider>
+    );
+  };
+
+  const handleSuspendTenant = async (tenant: Tenant) => {
+    setIsProcessing(true);
+    try {
+      const newStatus = tenant.status === 'suspended' ? 'active' : 'suspended';
+      const { error } = await supabase.from('tenants').update({ status: newStatus }).eq('id', tenant.id);
+      if (error) throw error;
+      toast.success(newStatus === 'suspended' ? 'Tenant suspendido' : 'Tenant reactivado');
+      setTenantToSuspend(null);
+      fetchTenants();
+    } catch (error) {
+      toast.error('Error al actualizar el estado del tenant');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteTenant = async (tenant: Tenant) => {
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase.rpc('admin_delete_tenant' as any, { p_tenant_id: tenant.id });
+      if (error) throw error;
+      toast.success('Tenant eliminado permanentemente');
+      setTenantToDelete(null);
+      setDeleteConfirmText('');
+      fetchTenants();
+    } catch (error: any) {
+      toast.error('Error al eliminar el tenant: ' + (error.message || 'Error desconocido'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Both global super admins and partner-scoped admins can create tenants.
+  // For partner-scoped admins, partner_id is auto-assigned to their scope
+  // (see handleCreateTenant) and cannot be changed from the UI.
+  const canCreateTenant = true;
+
+  const headerActions = canCreateTenant ? (
+    <div className="flex gap-2">
+      {!partnerScope && (
+        <Button variant="outline" onClick={() => setIsCreatePartnerOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nuevo Partner
+        </Button>
+      )}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <DialogTrigger asChild>
+        <Button className="gradient-primary">
+          <Plus className="h-4 w-4 mr-2" />
+          Nuevo Tenant
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Crear nuevo Tenant</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleCreateTenant} className="mt-4">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+
+            {/* Empresa */}
+            <div className="space-y-2">
+              <Label>Nombre de la empresa</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Brokia Demo"
+                disabled={isCreating}
+              />
+              {formErrors.name && <p className="text-xs text-destructive">{formErrors.name}</p>}
+            </div>
+
+            {/* Partner — solo para global super admins */}
+            {!partnerScope && (
+              <div className="space-y-2">
+                <Label>Partner</Label>
+                <Select
+                  value={formData.partnerId}
+                  onValueChange={(v) => setFormData({ ...formData, partnerId: v })}
+                  disabled={isCreating}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un partner…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {partners.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formErrors.partnerId && <p className="text-xs text-destructive">{formErrors.partnerId}</p>}
+              </div>
+            )}
+
+            {/* Administrador */}
+            <div className="border-t border-border pt-4 space-y-3">
+              <p className="text-sm font-medium">Usuario administrador</p>
+
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Nombre</Label>
+                <Input
+                  value={formData.ownerName}
+                  onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                  placeholder="Juan Pérez"
+                  disabled={isCreating}
+                />
+                {formErrors.ownerName && <p className="text-xs text-destructive">{formErrors.ownerName}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Email</Label>
+                <Input
+                  type="email"
+                  value={formData.ownerEmail}
+                  onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
+                  placeholder="admin@empresa.com"
+                  disabled={isCreating}
+                />
+                {formErrors.ownerEmail && <p className="text-xs text-destructive">{formErrors.ownerEmail}</p>}
+              </div>
+
+              {/* Contraseña con generar + copiar */}
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Contraseña</Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="••••••••••••"
+                      disabled={isCreating}
+                      className="pr-10 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {/* Generar */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={applyGeneratedPassword}
+                    disabled={isCreating}
+                    title="Generar contraseña segura"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  {/* Copiar */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={copyPassword}
+                    disabled={isCreating || !formData.password}
+                    title="Copiar contraseña"
+                  >
+                    {passwordCopied
+                      ? <Check className="h-4 w-4 text-green-500" />
+                      : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {formErrors.password && <p className="text-xs text-destructive">{formErrors.password}</p>}
+
+                {/* Requisitos */}
+                {formData.password && (
+                  <div className="flex gap-3 flex-wrap">
+                    {PASSWORD_REQS.map((req) => (
+                      <span
+                        key={req.label}
+                        className={`flex items-center gap-1 text-xs ${req.test(formData.password) ? 'text-green-500' : 'text-muted-foreground'}`}
+                      >
+                        {req.test(formData.password)
+                          ? <Check className="h-3 w-3" />
+                          : <Shield className="h-3 w-3" />}
+                        {req.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Confirmar contraseña */}
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Confirmar contraseña</Label>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  placeholder="••••••••••••"
+                  disabled={isCreating}
+                  className="font-mono"
+                />
+                {formErrors.confirmPassword && (
+                  <p className="text-xs text-destructive">{formErrors.confirmPassword}</p>
+                )}
+              </div>
+
+              {/* Temporal / Definitiva */}
+              <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-secondary/30">
+                <div className="space-y-0.5">
+                  <Label className="cursor-pointer">
+                    {formData.isTemporary ? 'Contraseña temporal' : 'Contraseña definitiva'}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {formData.isTemporary
+                      ? 'El usuario deberá cambiarla en su primer acceso'
+                      : 'El usuario entra directo con esta contraseña'}
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.isTemporary}
+                  onCheckedChange={(v) => setFormData({ ...formData, isTemporary: v })}
+                  disabled={isCreating}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Acciones */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4">
+            <Button
+              type="button" variant="outline"
+              onClick={() => {
+                setIsCreateOpen(false);
+                setShowPassword(false);
+              }}
+              disabled={isCreating}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" className="gradient-primary" disabled={isCreating}>
+              {isCreating ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creando...</>
+              ) : 'Crear Tenant'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+    </div>
+  ) : null;
+
+  return (
+    <AdminLayout
+      title="Tenants"
+      description="Gestiona todos los tenants de la plataforma"
+      actions={headerActions}
+    >
+      <CreatePartnerDialog
+        open={isCreatePartnerOpen}
+        onOpenChange={setIsCreatePartnerOpen}
+        onCreated={(pid) => navigate(`/admin/partners/${pid}`)}
+      />
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold text-foreground">{tenants.length}</p>
+              <p className="text-sm text-muted-foreground">Tenants totales</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-success/10">
+              <Building2 className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold text-foreground">
+                {tenants.filter((t) => t.status === 'active').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Activos</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-accent/10">
+              <Users className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-2xl font-semibold text-foreground">
+                {tenants.reduce((acc, t) => acc + (t.users_count || 0), 0)}
+              </p>
+              <p className="text-sm text-muted-foreground">Usuarios totales</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar tenants..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 bg-card"
+        />
+      </div>
+
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : filteredTenants.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">No se encontraron tenants</div>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Empresa</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Origen</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Partner</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Plan</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Estado</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Asientos</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Saldo</th>
+                <th className="text-left p-4 text-sm font-medium text-muted-foreground">Creado</th>
+                <th className="text-right p-4 text-sm font-medium text-muted-foreground"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTenants.map((tenant) => {
+                const monthlyRemaining = tenant.monthly_credits_remaining ?? 0;
+                const accumulated = tenant.accumulated_credits ?? 0;
+                // Source of truth: tenants.message_credits (updated directly by wallet redeems).
+                // Fallback to the breakdown for legacy rows where message_credits is not yet populated.
+                const totalCredits = tenant.message_credits ?? (monthlyRemaining + accumulated);
+                return (
+                  <tr
+                    key={tenant.id}
+                    onClick={() => navigate(`/admin/tenants/${tenant.id}`)}
+                    className="border-b border-border last:border-0 hover:bg-secondary/30 cursor-pointer"
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-foreground">{tenant.name}</span>
+                          {renderFeatureIcons(tenant)}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      {tenant.managed_externally ? (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] uppercase tracking-wider border-accent text-accent bg-accent/10"
+                        >
+                          Sistema Core
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] uppercase tracking-wider text-muted-foreground"
+                        >
+                          Local
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="p-4">{renderPartnerBadge(tenant)}</td>
+                    <td className="p-4">
+                      <Badge variant="secondary" className="capitalize">
+                        {getPlanLabel(tenant.plan)}
+                      </Badge>
+                    </td>
+                    <td className="p-4">
+                      <Badge variant={getStatusBadgeVariant(tenant.status, tenant.subscription_status)} className="capitalize">
+                        {getStatusLabel(tenant.status, tenant.subscription_status)}
+                      </Badge>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-sm text-foreground">
+                        <span className="font-medium">{tenant.users_count ?? 0}</span>
+                        <span className="text-muted-foreground"> / {tenant.max_users ?? '—'}</span>
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="min-w-[120px]">
+                        <p className="font-medium text-foreground">
+                          {totalCredits.toLocaleString('es-MX')} créditos
+                        </p>
+                        <span className={`text-xs ${getCreditStatusColor(totalCredits, tenant.billing_state)}`}>
+                          {getCreditStatusLabel(totalCredits, tenant.billing_state)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-muted-foreground text-sm">
+                      {new Date(tenant.created_at).toLocaleDateString('es-MX')}
+                    </td>
+                    <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/admin/tenants/${tenant.id}`)}>
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Ver detalles
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedTenantForTwilio(tenant);
+                              setTwilioConfigOpen(true);
+                            }}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Configurar WhatsApp
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setTenantToSuspend(tenant)}
+                            className={tenant.status === 'suspended' ? 'text-success' : 'text-warning'}
+                          >
+                            {tenant.status === 'suspended' ? (
+                              <>
+                                <Play className="h-4 w-4 mr-2" />
+                                Reactivar
+                              </>
+                            ) : (
+                              <>
+                                <Pause className="h-4 w-4 mr-2" />
+                                Suspender
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setTenantToDelete(tenant)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {selectedTenantForTwilio && (
+        <TwilioConfigDialog
+          open={twilioConfigOpen}
+          onOpenChange={setTwilioConfigOpen}
+          tenantId={selectedTenantForTwilio.id}
+          tenantName={selectedTenantForTwilio.name}
+          onSuccess={() => fetchTenants()}
+        />
+      )}
+
+      <AlertDialog open={!!tenantToSuspend} onOpenChange={(open) => !open && setTenantToSuspend(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {tenantToSuspend?.status === 'suspended' ? 'Reactivar' : 'Suspender'} tenant
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {tenantToSuspend?.status === 'suspended'
+                ? `¿Estás seguro de que deseas reactivar "${tenantToSuspend?.name}"?`
+                : `¿Estás seguro de que deseas suspender "${tenantToSuspend?.name}"? Los usuarios no podrán acceder.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessing}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => tenantToSuspend && handleSuspendTenant(tenantToSuspend)}
+              disabled={isProcessing}
+              className={tenantToSuspend?.status === 'suspended' ? 'bg-success hover:bg-success/90' : 'bg-warning hover:bg-warning/90'}
+            >
+              {isProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {tenantToSuspend?.status === 'suspended' ? 'Reactivar' : 'Suspender'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!tenantToDelete}
+        onOpenChange={(open) => {
+          if (!open) {
+            setTenantToDelete(null);
+            setDeleteConfirmText('');
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Eliminar tenant permanentemente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vas a eliminar <strong>"{tenantToDelete?.name}"</strong> de forma permanente.
+              Esta acción no se puede deshacer y borrará todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <p className="text-sm text-muted-foreground">
+              Para confirmar, escribe <span className="font-mono font-semibold text-destructive">eliminar</span> en el campo:
+            </p>
+            <Input
+              autoFocus
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="eliminar"
+              disabled={isProcessing}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessing}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => tenantToDelete && handleDeleteTenant(tenantToDelete)}
+              disabled={isProcessing || deleteConfirmText.trim().toLowerCase() !== 'eliminar'}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isProcessing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Eliminar permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AdminLayout>
+  );
+};
+
+export default AdminTenants;

@@ -1,0 +1,309 @@
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { 
+  TrendingUp, 
+  Flame, 
+  Thermometer, 
+  Snowflake,
+  CheckCircle2,
+  XCircle,
+  DollarSign,
+  Calendar,
+  MessageSquare,
+  Layers,
+  AlertTriangle,
+  Eye
+} from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
+import { PIPELINE_STAGES, OPERATIONAL_STATUSES } from "./LeadPriorityCard";
+import { BLOCK_REASONS, VISIT_OUTCOMES } from "./LeadDiagnosticsCard";
+import { useTenantSettings, useCreditTypeLabel } from "@/hooks/useTenantSettings";
+
+interface LeadContextPanelProps {
+  data: {
+    lead_score: number;
+    lead_temperature: 'cold' | 'warm' | 'hot';
+    engagement_level: 'low' | 'medium' | 'high';
+    opt_in_status: 'unknown' | 'opt_in' | 'opt_out';
+    next_action_at: string | null;
+    last_interaction_at: string | null;
+    re_budget_estimated_mxn: number | null;
+    re_credit_preapproved: boolean;
+    re_credit_type: string | null;
+    pipeline_stage: string;
+    operational_status: string;
+    re_block_reason: string | null;
+    re_visit_outcome: string | null;
+  };
+}
+
+export function LeadContextPanel({ data }: LeadContextPanelProps) {
+  const { currency, locale } = useTenantSettings();
+  const getCreditTypeLabel = useCreditTypeLabel();
+
+  const getTemperatureDisplay = () => {
+    switch (data.lead_temperature) {
+      case 'hot':
+        return {
+          icon: Flame,
+          label: 'Caliente',
+          color: 'text-red-400',
+          bgColor: 'bg-red-500/10',
+          borderColor: 'border-red-500/30'
+        };
+      case 'warm':
+        return {
+          icon: Thermometer,
+          label: 'Tibio',
+          color: 'text-amber-400',
+          bgColor: 'bg-amber-500/10',
+          borderColor: 'border-amber-500/30'
+        };
+      default:
+        return {
+          icon: Snowflake,
+          label: 'Frío',
+          color: 'text-blue-400',
+          bgColor: 'bg-blue-500/10',
+          borderColor: 'border-blue-500/30'
+        };
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return 'text-green-400';
+    if (score >= 40) return 'text-amber-400';
+    return 'text-muted-foreground';
+  };
+
+  const getProgressColor = (score: number) => {
+    if (score >= 70) return 'bg-green-500';
+    if (score >= 40) return 'bg-amber-500';
+    return 'bg-muted-foreground';
+  };
+
+  const formatCurrency = (value: number | null) => {
+    if (value === null || value === undefined) return '—';
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const getPipelineStageLabel = (stage: string) => {
+    return PIPELINE_STAGES.find(s => s.value === stage)?.label || stage;
+  };
+
+  const getOperationalStatusLabel = (status: string) => {
+    return OPERATIONAL_STATUSES.find(s => s.value === status)?.label || status;
+  };
+
+  const getBlockReasonLabel = (reason: string | null) => {
+    if (!reason) return null;
+    return BLOCK_REASONS.find(r => r.value === reason)?.label || reason;
+  };
+
+  const getVisitOutcomeLabel = (outcome: string | null) => {
+    if (!outcome) return null;
+    return VISIT_OUTCOMES.find(o => o.value === outcome)?.label || outcome;
+  };
+
+  const temp = getTemperatureDisplay();
+  const TempIcon = temp.icon;
+
+  return (
+    <div className="w-72 shrink-0 border-l border-border bg-muted/20 hidden lg:flex lg:flex-col overflow-hidden">
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-4">
+        {/* Pipeline Stage */}
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <Layers className="h-3.5 w-3.5" />
+              Pipeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <Badge className="bg-primary/20 text-primary border-primary/30 font-medium">
+              {getPipelineStageLabel(data.pipeline_stage)}
+            </Badge>
+            <div className="mt-2">
+              <span className="text-xs text-muted-foreground">Estado: </span>
+              <span className="text-xs font-medium">
+                {getOperationalStatusLabel(data.operational_status)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Block Reason & Visit Outcome */}
+        {(data.re_block_reason || data.re_visit_outcome) && (
+          <Card className="bg-card/50 border-border/50">
+            <CardContent className="p-4 space-y-2">
+              {data.re_block_reason && (
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-400" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Bloqueo</p>
+                    <p className="text-sm font-medium text-amber-400">
+                      {getBlockReasonLabel(data.re_block_reason)}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {data.re_block_reason && data.re_visit_outcome && <Separator className="bg-border/50" />}
+              {data.re_visit_outcome && (
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-blue-400" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Visita</p>
+                    <p className="text-sm font-medium">
+                      {getVisitOutcomeLabel(data.re_visit_outcome)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Lead Score */}
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <TrendingUp className="h-3.5 w-3.5" />
+              Lead Score
+              <Badge variant="outline" className="ml-auto text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/30">
+                IA
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <div className="flex items-end gap-2 mb-2">
+              <span className={`text-3xl font-bold ${getScoreColor(data.lead_score)}`}>
+                {data.lead_score}
+              </span>
+              <span className="text-muted-foreground text-sm mb-1">/ 100</span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-500 ${getProgressColor(data.lead_score)}`}
+                style={{ width: `${data.lead_score}%` }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Temperature */}
+        <div className={`rounded-lg p-4 ${temp.bgColor} border ${temp.borderColor}`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${temp.bgColor}`}>
+              <TempIcon className={`h-5 w-5 ${temp.color}`} />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Temperatura <span className="text-[10px] text-primary">(IA)</span></p>
+              <p className={`font-semibold ${temp.color}`}>{temp.label}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Credit Status */}
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Crédito preaprobado</span>
+              {data.re_credit_preapproved ? (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Sí
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="gap-1">
+                  <XCircle className="h-3 w-3" />
+                  No
+                </Badge>
+              )}
+            </div>
+            
+            <Separator className="bg-border/50" />
+            
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Tipo de crédito</p>
+              <p className="font-medium text-sm">{getCreditTypeLabel(data.re_credit_type)}</p>
+            </div>
+            
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <DollarSign className="h-3 w-3" />
+                Presupuesto estimado
+              </p>
+              <p className="font-semibold text-lg text-primary">
+                {formatCurrency(data.re_budget_estimated_mxn)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dates */}
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="p-4 space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                Próxima acción
+              </p>
+              {data.next_action_at ? (
+                <p className="font-medium text-sm">
+                  {format(new Date(data.next_action_at), "d 'de' MMM, HH:mm", { locale: es })}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sin programar</p>
+              )}
+            </div>
+            
+            <Separator className="bg-border/50" />
+            
+            <div>
+              <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                <MessageSquare className="h-3 w-3" />
+                Última interacción
+              </p>
+              {data.last_interaction_at ? (
+                <p className="font-medium text-sm">
+                  {formatDistanceToNow(new Date(data.last_interaction_at), { 
+                    addSuffix: true, 
+                    locale: es 
+                  })}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sin interacciones</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Opt-in Status */}
+        <div className="flex items-center justify-between px-1">
+          <span className="text-xs text-muted-foreground">Estado Opt-in</span>
+          {data.opt_in_status === 'opt_in' ? (
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+              Aceptó
+            </Badge>
+          ) : data.opt_in_status === 'opt_out' ? (
+            <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+              Opt-out
+            </Badge>
+          ) : (
+            <Badge variant="secondary">Desconocido</Badge>
+          )}
+        </div>
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}

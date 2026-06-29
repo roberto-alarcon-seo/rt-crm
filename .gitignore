@@ -1,0 +1,48 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+dev-dist
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment secrets — nunca commitear keys ni passwords
+.env
+.env.production
+.env.secret
+supabase/.env
+
+# Lovable metadata — ya no aplica
+.lovable
+
+# Binary lockfile de bun (se usa bun.lock en texto)
+bun.lockb
+.vercel
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# Env check scripts
+.env.vercel-check
+
+# Video assets (binarios grandes, no van en git)
+*.mp4
+*.mov
