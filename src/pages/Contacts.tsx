@@ -49,7 +49,6 @@ import { useContacts, Contact } from "@/hooks/useContacts";
 import { useSegments } from "@/hooks/useSegments";
 import { useAuth } from "@/contexts/AuthContext";
 import { CsvImportWizard } from "@/components/contacts/CsvImportWizard";
-import { ContactOriginModal } from "@/components/contacts/ContactOriginModal";
 import { TemplateSelectorSheet } from "@/components/inbox/TemplateSelectorSheet";
 import { useSendTemplate } from "@/hooks/useSendTemplate";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,7 +110,6 @@ export default function Contacts() {
   const [bulkTagInput, setBulkTagInput] = useState("");
   const [selectedSegmentId, setSelectedSegmentId] = useState("");
   const [lifecycleTab, setLifecycleTab] = useState<'all' | 'lead' | 'client'>('all');
-  const [showOriginModal, setShowOriginModal] = useState(false);
 
   const tenantId = useEffectiveTenantId();
   const sendTemplate = useSendTemplate();
@@ -536,7 +534,7 @@ export default function Contacts() {
                   <span className="hidden sm:inline">Importar CSV</span>
                   <span className="sm:hidden">CSV</span>
                 </Button>
-                <Button size="sm" onClick={() => setShowOriginModal(true)}>
+                <Button size="sm" onClick={() => navigate("/contacts/new")}>
                   <Plus className="w-4 h-4 mr-1 md:mr-2" />
                   <span className="hidden sm:inline">Nuevo contacto</span>
                   <span className="sm:hidden">Nuevo</span>
@@ -1076,16 +1074,6 @@ export default function Contacts() {
         open={showImportModal}
         onOpenChange={setShowImportModal}
         onImportComplete={fetchContacts}
-      />
-
-      {/* Contact Origin Modal */}
-      <ContactOriginModal
-        open={showOriginModal}
-        onOpenChange={setShowOriginModal}
-        onCreated={(id) => {
-          setShowOriginModal(false);
-          navigate(`/contacts/${id}`);
-        }}
       />
 
       {/* Template Selector for "Iniciar conversación" */}

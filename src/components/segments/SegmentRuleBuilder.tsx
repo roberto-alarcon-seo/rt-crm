@@ -17,7 +17,7 @@ import {
   OPERATORS_BY_TYPE,
   BASE_CONTACT_FIELDS,
   UNIVERSAL_FIXED_FIELDS,
-  REAL_ESTATE_FIXED_FIELDS,
+  B2B_FIXED_FIELDS,
 } from "@/types/segments";
 
 interface CustomField {
@@ -73,7 +73,7 @@ export function SegmentRuleBuilder({
     options: (f as any).options,
   }));
 
-  const realEstateFields: FieldDef[] = REAL_ESTATE_FIXED_FIELDS.map((f) => ({
+  const b2bFields: FieldDef[] = B2B_FIXED_FIELDS.map((f) => ({
     key: f.key,
     label: f.label,
     dataType: f.dataType,
@@ -89,7 +89,7 @@ export function SegmentRuleBuilder({
   }));
 
   // All fields combined for lookup
-  const allFields = [...baseFields, ...universalFields, ...realEstateFields, ...customFieldsDef];
+  const allFields = [...baseFields, ...universalFields, ...b2bFields, ...customFieldsDef];
 
   const addCondition = () => {
     const newCondition: SegmentCondition = {
@@ -180,27 +180,25 @@ export function SegmentRuleBuilder({
       active: "Activo",
       inactive: "Inactivo",
       archived: "Archivado",
-      // Credit types
-      INFONAVIT: "INFONAVIT",
-      COFINAVIT: "COFINAVIT",
-      BANK: "Bancario",
-      CASH: "Contado",
-      FOVISSSTE: "Fovissste",
-      ISFAM: "ISFAM",
-      CFE: "CFE",
-      // RE Reason
-      BUY: "Comprar",
-      RENT: "Rentar",
-      INVEST: "Invertir",
-      MOVE: "Mudarse",
-      UPGRADE: "Mejorar",
-      DOWNSIZE: "Reducir",
+      // Pipeline stages B2B
+      etapa_0_captacion: "Captación",
+      etapa_1_calificacion: "Calificación",
+      etapa_2_nurturing: "Nurturing",
+      etapa_3_demo: "Demo / Discovery",
+      etapa_4_oportunidad: "Oportunidad Calificada",
+      etapa_5_propuesta: "Propuesta Enviada",
+      etapa_6_negociacion: "Negociación",
+      etapa_7_compras_legal: "Compras / Legal",
+      etapa_8_alta_proveedor: "Alta de Proveedor",
+      etapa_9_contrato: "Contrato / Firma",
+      cerrada_ganada: "Cerrada Ganada",
+      cerrada_perdida: "Cerrada Perdida",
+      // Preferred channel
+      whatsapp: "WhatsApp",
+      email: "Email",
+      phone: "Teléfono",
+      linkedin: "LinkedIn",
       OTHER: "Otro",
-      // RE Situation
-      RENTING: "Rentando",
-      OWNING: "Propietario",
-      LIVING_WITH_FAMILY: "Vive con familia",
-      LOOKING_TO_MOVE: "Buscando mudarse",
     };
     return labelMap[value] || value;
   };
@@ -343,12 +341,12 @@ export function SegmentRuleBuilder({
                   ))}
                 </SelectGroup>
 
-                {/* Real Estate fields */}
+                {/* B2B fields */}
                 <SelectGroup>
                   <SelectLabel className="text-xs text-muted-foreground font-semibold">
-                    Real Estate
+                    B2B
                   </SelectLabel>
-                  {realEstateFields.map((f) => (
+                  {b2bFields.map((f) => (
                     <SelectItem key={f.key} value={f.key}>
                       {f.label}
                     </SelectItem>

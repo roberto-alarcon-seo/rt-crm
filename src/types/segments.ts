@@ -142,37 +142,23 @@ export const UNIVERSAL_FIXED_FIELDS = [
   { key: 'last_interaction_at', label: 'Última interacción', dataType: 'datetime' },
 ];
 
-// Operational fields (Real Estate pipeline)
+// B2B pipeline operational fields
 export const OPERATIONAL_FIELDS = [
-  { key: 'pipeline_stage', label: 'Etapa del pipeline', dataType: 'select', options: ['new_lead', 'interest_confirmed', 'financial_validation', 'searching', 'visit_scheduled', 'visit_done', 'follow_up', 'negotiation', 'closed_won', 'closed_lost'] },
+  { key: 'pipeline_stage', label: 'Etapa del pipeline', dataType: 'select', options: ['etapa_0_captacion', 'etapa_1_calificacion', 'etapa_2_nurturing', 'etapa_3_demo', 'etapa_4_oportunidad', 'etapa_5_propuesta', 'etapa_6_negociacion', 'etapa_7_compras_legal', 'etapa_8_alta_proveedor', 'etapa_9_contrato', 'cerrada_ganada', 'cerrada_perdida'] },
   { key: 'operational_status', label: 'Estado del contacto', dataType: 'select', options: ['ACTIVE', 'WAITING_CUSTOMER', 'GHOSTING', 'DND', 'CLOSED'] },
-  { key: 're_block_reason', label: 'Motivo de bloqueo', dataType: 'select', options: ['NO_RESPONSE', 'BUDGET_TOO_LOW', 'CREDIT_NOT_APPROVED', 'CREDIT_UNKNOWN_AMOUNT', 'CREDIT_NOT_COMPATIBLE', 'NO_PROPERTIES_MATCH', 'NOT_INTERESTED_AFTER_VISIT', 'POSTPONED', 'OTHER'] },
-  { key: 're_visit_outcome', label: 'Resultado de visita', dataType: 'select', options: ['LIKED', 'DIDNT_LIKE', 'NO_SHOW', 'RESCHEDULE', 'PENDING'] },
 ];
 
-// Real Estate fixed fields
-export const REAL_ESTATE_FIXED_FIELDS = [
-  { key: 're_budget_estimated_mxn', label: 'Presupuesto (MXN)', dataType: 'number' },
-  { key: 're_credit_type', label: 'Tipo de crédito', dataType: 'select', options: ['INFONAVIT', 'COFINAVIT', 'BANK', 'CASH', 'MIXED'] },
-  { key: 're_credit_preapproved', label: 'Crédito preaprobado', dataType: 'boolean' },
-  { key: 're_down_payment_mxn', label: 'Enganche (MXN)', dataType: 'number' },
-  { key: 're_monthly_income_mxn', label: 'Ingreso mensual (MXN)', dataType: 'number' },
-  { key: 're_property_types', label: 'Tipo de propiedad', dataType: 'array' },
-  { key: 're_bedrooms', label: 'Recámaras', dataType: 'number' },
-  { key: 're_bathrooms', label: 'Baños', dataType: 'number' },
-  { key: 're_parking_spots', label: 'Estacionamientos', dataType: 'number' },
-  { key: 're_requires_parking', label: 'Requiere estacionamiento', dataType: 'boolean' },
-  { key: 're_zones', label: 'Zonas de interés', dataType: 'array' },
-  { key: 're_amenities', label: 'Amenidades', dataType: 'array' },
-  { key: 're_accepts_pets', label: 'Acepta mascotas', dataType: 'boolean' },
-  { key: 're_reason', label: 'Motivo', dataType: 'select', options: ['BUY', 'RENT', 'INVEST', 'MOVE', 'UPGRADE', 'DOWNSIZE', 'OTHER'] },
-  { key: 're_current_situation', label: 'Situación actual', dataType: 'select', options: ['RENTING', 'OWNING', 'LIVING_WITH_FAMILY', 'LOOKING_TO_MOVE', 'OTHER'] },
+// B2B fixed fields
+export const B2B_FIXED_FIELDS = [
+  { key: 'job_title', label: 'Cargo', dataType: 'short_text' },
+  { key: 'linkedin_url', label: 'LinkedIn', dataType: 'url' },
+  { key: 'preferred_channel', label: 'Canal preferido', dataType: 'select', options: ['whatsapp', 'email', 'phone', 'linkedin'] },
 ];
 
-// All system fields (base + universal + operational + real estate)
+// All system fields (base + universal + operational + B2B)
 export const ALL_SYSTEM_FIELDS = [
   ...BASE_CONTACT_FIELDS,
   ...UNIVERSAL_FIXED_FIELDS,
   ...OPERATIONAL_FIELDS,
-  ...REAL_ESTATE_FIXED_FIELDS,
+  ...B2B_FIXED_FIELDS,
 ];

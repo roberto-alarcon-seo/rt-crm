@@ -85,13 +85,6 @@ function parsePhoneValue(phone: string): { code: string; digits: string } {
   return { code: "+52", digits: stripped.replace(/\D/g, "") };
 }
 
-// Extend ContactFormData with B2B fields not yet in the type
-interface B2BContactFormData extends ContactFormData {
-  account_id?: string | null;
-  job_title?: string | null;
-  linkedin_url?: string | null;
-  preferred_channel?: string;
-}
 
 const SECTIONS = [
   { id: "general",  label: "Información general",  shortLabel: "General",  icon: User },
@@ -168,7 +161,7 @@ export default function ContactEditor() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState("general");
-  const [formData, setFormData] = useState<B2BContactFormData>({
+  const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
     phone: "",
@@ -375,9 +368,9 @@ export default function ContactEditor() {
                   )}
                 </div>
                 <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground mt-0.5">
-                  {(formData as any).job_title && (
+                  {formData.job_title && (
                     <span className="flex items-center gap-1">
-                      <Briefcase className="h-3 w-3" /> {(formData as any).job_title}
+                      <Briefcase className="h-3 w-3" /> {formData.job_title}
                     </span>
                   )}
                   {selectedAccount && (
@@ -535,8 +528,8 @@ export default function ContactEditor() {
                     <Input
                       id="job_title"
                       placeholder="ej. Director de Tecnología"
-                      value={(formData as any).job_title || ""}
-                      onChange={e => setFormData({ ...formData, job_title: e.target.value || null } as B2BContactFormData)}
+                      value={formData.job_title || ""}
+                      onChange={e => setFormData({ ...formData, job_title: e.target.value || null } as ContactFormData)}
                     />
                   </div>
 
@@ -602,15 +595,15 @@ export default function ContactEditor() {
                         id="linkedin_url"
                         type="url"
                         placeholder="linkedin.com/in/nombre"
-                        value={(formData as any).linkedin_url || ""}
-                        onChange={e => setFormData({ ...formData, linkedin_url: e.target.value || null } as B2BContactFormData)}
+                        value={formData.linkedin_url || ""}
+                        onChange={e => setFormData({ ...formData, linkedin_url: e.target.value || null } as ContactFormData)}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="preferred_channel">Canal preferido</Label>
                       <Select
-                        value={(formData as any).preferred_channel || "whatsapp"}
-                        onValueChange={v => setFormData({ ...formData, preferred_channel: v } as B2BContactFormData)}
+                        value={formData.preferred_channel || "whatsapp"}
+                        onValueChange={v => setFormData({ ...formData, preferred_channel: v } as ContactFormData)}
                       >
                         <SelectTrigger id="preferred_channel">
                           <SelectValue />
@@ -688,12 +681,12 @@ export default function ContactEditor() {
                   <div className="space-y-2">
                     <Label>Empresa</Label>
                     <Select
-                      value={(formData as any).account_id || "__none__"}
+                      value={formData.account_id || "__none__"}
                       onValueChange={v =>
                         setFormData({
                           ...formData,
                           account_id: v === "__none__" ? null : v,
-                        } as B2BContactFormData)
+                        } as ContactFormData)
                       }
                     >
                       <SelectTrigger>

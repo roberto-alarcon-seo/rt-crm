@@ -4,17 +4,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { Json } from "@/integrations/supabase/types";
 import { trackPipelineEvent, getMetaCookies } from "@/lib/meta/pixelLoader";
 
-// Pipeline stages in order (for detecting reversal)
+// B2B pipeline stages in order (for detecting reversal)
 const PIPELINE_ORDER = [
-  'new_lead',
-  'interest_confirmed',
-  'financial_validation',
-  'searching',
-  'visit_done',
-  'follow_up',
-  'negotiation',
-  'closed_won',
-  'closed_lost',
+  'etapa_0_captacion',
+  'etapa_1_calificacion',
+  'etapa_2_nurturing',
+  'etapa_3_demo',
+  'etapa_4_oportunidad',
+  'etapa_5_propuesta',
+  'etapa_6_negociacion',
+  'etapa_7_compras_legal',
+  'etapa_8_alta_proveedor',
+  'etapa_9_contrato',
+  'cerrada_ganada',
+  'cerrada_perdida',
 ];
 
 interface TenantSettings {
@@ -45,7 +48,6 @@ interface Contact {
   internal_converted_at?: string | null;
   internal_converted_stage?: string | null;
   internal_conversion_count: number;
-  re_property_interest_id?: string | null;
   lead_score?: number;
 }
 
@@ -83,7 +85,7 @@ export function usePipelineStageChange() {
       // Fetch contact data
       const { data: contact } = await supabase
         .from('contacts')
-        .select('id, phone, email, internal_converted_at, internal_converted_stage, internal_conversion_count, re_property_interest_id, lead_score')
+        .select('id, phone, email, internal_converted_at, internal_converted_stage, internal_conversion_count, lead_score')
         .eq('id', contactId)
         .single();
 
@@ -208,14 +210,12 @@ async function handleMetaEvents(
     const eventData = {
       contactId: contact.id,
       pipelineStage: newStage,
-      propertyId: contact.re_property_interest_id || undefined,
       leadScore: contact.lead_score,
     };
 
     const customDataForCapi: Record<string, unknown> = {
       pipeline_stage: newStage,
       contact_id: contact.id,
-      property_id: contact.re_property_interest_id,
       lead_score: contact.lead_score,
     };
 

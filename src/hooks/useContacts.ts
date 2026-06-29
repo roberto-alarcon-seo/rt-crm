@@ -309,10 +309,10 @@ export function useContacts() {
           pipeline_stage: formData.pipeline_stage ?? 'etapa_0_captacion',
           operational_status: formData.operational_status ?? 'ACTIVE',
           // B2B fields
-          account_id: (formData as any).account_id ?? null,
-          job_title: (formData as any).job_title ?? null,
-          linkedin_url: (formData as any).linkedin_url ?? null,
-          preferred_channel: (formData as any).preferred_channel ?? null,
+          account_id: formData.account_id ?? null,
+          job_title: formData.job_title ?? null,
+          linkedin_url: formData.linkedin_url ?? null,
+          preferred_channel: formData.preferred_channel ?? null,
           // Auto-assign to the agent creating the contact
           assigned_agent_id: user?.id ?? null,
         })
@@ -391,10 +391,10 @@ export function useContacts() {
           pipeline_stage: formData.pipeline_stage ?? 'etapa_0_captacion',
           operational_status: formData.operational_status ?? 'ACTIVE',
           // B2B fields
-          account_id: (formData as any).account_id ?? null,
-          job_title: (formData as any).job_title ?? null,
-          linkedin_url: (formData as any).linkedin_url ?? null,
-          preferred_channel: (formData as any).preferred_channel ?? null,
+          account_id: formData.account_id ?? null,
+          job_title: formData.job_title ?? null,
+          linkedin_url: formData.linkedin_url ?? null,
+          preferred_channel: formData.preferred_channel ?? null,
         })
         .eq('id', id);
 

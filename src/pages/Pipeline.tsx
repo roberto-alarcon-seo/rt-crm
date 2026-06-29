@@ -40,7 +40,6 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePipelineStageChange } from "@/hooks/usePipelineStageChange";
-import { ConvertToClientModal } from "@/components/contacts/ConvertToClientModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 // B2B Sales Pipeline stages (RT CRM — §6.2 del documento de visión)
@@ -263,7 +262,7 @@ export default function Pipeline() {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [convertingContact, setConvertingContact] = useState<Contact | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
   const activeStages = PIPELINE_STAGES;
 
@@ -427,8 +426,23 @@ export default function Pipeline() {
     navigate(`/contacts/${contact.id}`);
   };
 
-  const handleConvertContact = (contact: Contact) => {
-    setConvertingContact(contact);
+  const handleConvertContact = async (contact: Contact) => {
+    if (isConverting) return;
+    setIsConverting(true);
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .update({ lifecycle: 'client', pipeline_stage: 'cerrada_ganada' })
+        .eq('id', contact.id);
+      if (error) throw error;
+      await handlePipelineStageChange(contact.id, contact.pipeline_stage, 'cerrada_ganada');
+      queryClient.invalidateQueries({ queryKey: ['pipeline-contacts'] });
+      toast.success(`${contact.name} marcado como cliente ganado`);
+    } catch {
+      toast.error('Error al convertir contacto');
+    } finally {
+      setIsConverting(false);
+    }
   };
 
   const handleRefresh = async () => {
@@ -656,18 +670,6 @@ export default function Pipeline() {
         </div>
       </div>
 
-      {convertingContact && (
-        <ConvertToClientModal
-          open={!!convertingContact}
-          onOpenChange={(open) => { if (!open) setConvertingContact(null); }}
-          contact={{
-            id: convertingContact.id,
-            name: convertingContact.name,
-            re_property_interest_id: convertingContact.re_property_interest_id,
-          }}
-          defaultDealType="compra"
-        />
-      )}
     </div>
   );
 }
