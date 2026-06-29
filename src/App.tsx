@@ -34,10 +34,10 @@ const AutomationRuns = lazy(() => import("./pages/AutomationRuns"));
 import Pipeline from "./pages/Pipeline";
 const Accounts = lazy(() => import("./pages/Accounts"));
 const AccountDetail = lazy(() => import("./pages/AccountDetail"));
+const AccountEditor = lazy(() => import("./pages/AccountEditor"));
 import { toast } from "sonner";
 import SettingsWhatsAppStatus from "./pages/settings/SettingsWhatsAppStatus";
 import SettingsContactFieldsPage from "./pages/settings/SettingsContactFieldsPage";
-import Clients from "./pages/Clients";
 import SettingsAIConfig from "./pages/settings/SettingsAIConfig";
 import SettingsKnowledgeBase from "./pages/settings/SettingsKnowledgeBase";
 import KnowledgeBaseEditor from "./pages/settings/KnowledgeBaseEditor";
@@ -62,7 +62,6 @@ import PartnerSettings from "./pages/admin/PartnerSettings";
 import PartnerSuperWallet from "./pages/admin/PartnerSuperWallet";
 import PartnerDetail from "./pages/admin/PartnerDetail";
 import AdminPartners from "./pages/admin/AdminPartners";
-import MasterTemplates from "./pages/admin/MasterTemplates";
 import AdminAssignmentTests from "./pages/admin/AdminAssignmentTests";
 import AdminLeads from "./pages/AdminLeads";
 import ApiDocs from "./pages/developers/ApiDocs";
@@ -181,7 +180,6 @@ const App = () => (
               <Route path="/admin/logs" element={<ProtectedRoute requireSuperAdmin><PartnerScopedAdminGuard><AdminLogs /></PartnerScopedAdminGuard></ProtectedRoute>} />
               <Route path="/admin/partner-settings" element={<ProtectedRoute requireSuperAdmin><PartnerSettingsRedirect /></ProtectedRoute>} />
               <Route path="/admin/super-wallet" element={<ProtectedRoute requireSuperAdmin><PartnerSuperWallet /></ProtectedRoute>} />
-              <Route path="/admin/master-templates" element={<ProtectedRoute requireSuperAdmin><PartnerScopedAdminGuard><MasterTemplates /></PartnerScopedAdminGuard></ProtectedRoute>} />
               <Route path="/admin/assignment-tests" element={<ProtectedRoute requireSuperAdmin><AdminAssignmentTests /></ProtectedRoute>} />
               <Route path="/" element={<ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>} />
               <Route path="/inbox" element={<ProtectedRoute><MainLayout><Inbox /></MainLayout></ProtectedRoute>} />
@@ -210,7 +208,7 @@ const App = () => (
               <Route path="/events" element={<ProtectedRoute><MainLayout><Events /></MainLayout></ProtectedRoute>} />
               {/* Pipeline Kanban route */}
               <Route path="/pipeline" element={<ProtectedRoute><MainLayout><Pipeline /></MainLayout></ProtectedRoute>} />
-              <Route path="/clients" element={<ProtectedRoute><MainLayout><Clients /></MainLayout></ProtectedRoute>} />
+              <Route path="/clients" element={<Navigate to="/accounts" replace />} />
               {/* Automations routes */}
               <Route path="/automations" element={<ProtectedRoute><FeatureFlagGuard feature="automations_builder"><MainLayout><Automations /></MainLayout></FeatureFlagGuard></ProtectedRoute>} />
               <Route path="/automations/new" element={<ProtectedRoute><FeatureFlagGuard feature="automations_builder"><MainLayout><AutomationEditor /></MainLayout></FeatureFlagGuard></ProtectedRoute>} />
@@ -247,6 +245,8 @@ const App = () => (
               <Route path="/settings/api" element={<Navigate to="/settings/developer" replace />} />
               {/* Accounts (Empresas) routes */}
               <Route path="/accounts" element={<ProtectedRoute><MainLayout><Accounts /></MainLayout></ProtectedRoute>} />
+              <Route path="/accounts/new" element={<ProtectedRoute><MainLayout><AccountEditor /></MainLayout></ProtectedRoute>} />
+              <Route path="/accounts/:id/edit" element={<ProtectedRoute><MainLayout><AccountEditor /></MainLayout></ProtectedRoute>} />
               <Route path="/accounts/:id" element={<ProtectedRoute><MainLayout><AccountDetail /></MainLayout></ProtectedRoute>} />
               {/* Legacy properties routes — redirect to accounts */}
               <Route path="/properties" element={<Navigate to="/accounts" replace />} />

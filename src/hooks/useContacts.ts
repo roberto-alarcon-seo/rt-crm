@@ -30,33 +30,15 @@ export interface Contact {
   opt_in_status: 'unknown' | 'opt_in' | 'opt_out';
   // Pipeline & Operational fields
   pipeline_stage: string;
-  pipeline_type: 'calificacion' | 'captacion' | 'rentas';
   operational_status: string;
-  // Real Estate fixed fields
-  re_budget_estimated_mxn: number | null;
-  re_credit_type: string | null;
-  re_credit_preapproved: boolean;
-  re_down_payment_mxn: number | null;
-  re_monthly_income_mxn: number | null;
-  re_property_types: string[] | null;
-  re_bedrooms: number | null;
-  re_bathrooms: number | null;
-  re_parking_spots: number | null;
-  re_requires_parking: boolean;
-  re_zones: string[] | null;
-  re_amenities: string[] | null;
-  re_accepts_pets: boolean;
-  re_reason: 'BUY' | 'RENT' | 'INVEST' | 'MOVE' | 'UPGRADE' | 'DOWNSIZE' | 'OTHER' | null;
-  re_current_situation: 'RENTING' | 'OWNING' | 'LIVING_WITH_FAMILY' | 'LOOKING_TO_MOVE' | 'OTHER' | null;
-  // Property interest
-  re_property_interest_id: string | null;
-  // Diagnostic fields
-  re_block_reason: string | null;
-  re_visit_outcome: string | null;
+  // B2B fields
+  account_id: string | null;
+  job_title: string | null;
+  linkedin_url: string | null;
+  preferred_channel: string | null;
   // Lifecycle
   lifecycle: 'lead' | 'client' | 'past_client';
   entry_source: string | null;
-  // Lead source detail
   source_context: string | null;
   referrer_contact_id: string | null;
   // Joined agent name (populated client-side)
@@ -109,29 +91,12 @@ export interface ContactFormData {
   next_action_at?: string;
   // Pipeline & Operational fields
   pipeline_stage?: string;
-  pipeline_type?: 'calificacion' | 'captacion' | 'rentas';
   operational_status?: string;
-  // Real Estate fixed fields
-  re_budget_estimated_mxn?: number | null;
-  re_credit_type?: string | null;
-  re_credit_preapproved?: boolean;
-  re_down_payment_mxn?: number | null;
-  re_monthly_income_mxn?: number | null;
-  re_property_types?: string[];
-  re_bedrooms?: number | null;
-  re_bathrooms?: number | null;
-  re_parking_spots?: number | null;
-  re_requires_parking?: boolean;
-  re_zones?: string[];
-  re_amenities?: string[];
-  re_accepts_pets?: boolean;
-  re_reason?: 'BUY' | 'RENT' | 'INVEST' | 'MOVE' | 'UPGRADE' | 'DOWNSIZE' | 'OTHER' | null;
-  re_current_situation?: 'RENTING' | 'OWNING' | 'LIVING_WITH_FAMILY' | 'LOOKING_TO_MOVE' | 'OTHER' | null;
-  // Property interest
-  re_property_interest_id?: string | null;
-  // Diagnostic fields
-  re_block_reason?: string | null;
-  re_visit_outcome?: string | null;
+  // B2B fields
+  account_id?: string | null;
+  job_title?: string | null;
+  linkedin_url?: string | null;
+  preferred_channel?: string | null;
 }
 
 export function useContacts() {
@@ -341,30 +306,13 @@ export function useContacts() {
           opt_in_status: formData.opt_in_status ?? 'unknown',
           next_action_at: formData.next_action_at || null,
           // Pipeline & Operational fields
-          pipeline_stage: formData.pipeline_stage ?? 'new_lead',
-          pipeline_type: formData.pipeline_type ?? 'calificacion',
+          pipeline_stage: formData.pipeline_stage ?? 'etapa_0_captacion',
           operational_status: formData.operational_status ?? 'ACTIVE',
-          // Real Estate fixed fields
-          re_budget_estimated_mxn: formData.re_budget_estimated_mxn ?? null,
-          re_credit_type: formData.re_credit_type ?? null,
-          re_credit_preapproved: formData.re_credit_preapproved ?? false,
-          re_down_payment_mxn: formData.re_down_payment_mxn ?? null,
-          re_monthly_income_mxn: formData.re_monthly_income_mxn ?? null,
-          re_property_types: formData.re_property_types ?? null,
-          re_bedrooms: formData.re_bedrooms ?? null,
-          re_bathrooms: formData.re_bathrooms ?? null,
-          re_parking_spots: formData.re_parking_spots ?? null,
-          re_requires_parking: formData.re_requires_parking ?? false,
-          re_zones: formData.re_zones ?? null,
-          re_amenities: formData.re_amenities ?? null,
-          re_accepts_pets: formData.re_accepts_pets ?? false,
-          re_reason: formData.re_reason ?? null,
-          re_current_situation: formData.re_current_situation ?? null,
-          // Property interest
-          re_property_interest_id: formData.re_property_interest_id ?? null,
-          // Diagnostic fields
-          re_block_reason: formData.re_block_reason ?? null,
-          re_visit_outcome: formData.re_visit_outcome ?? null,
+          // B2B fields
+          account_id: (formData as any).account_id ?? null,
+          job_title: (formData as any).job_title ?? null,
+          linkedin_url: (formData as any).linkedin_url ?? null,
+          preferred_channel: (formData as any).preferred_channel ?? null,
           // Auto-assign to the agent creating the contact
           assigned_agent_id: user?.id ?? null,
         })
@@ -440,37 +388,20 @@ export function useContacts() {
           opt_in_status: formData.opt_in_status ?? 'unknown',
           next_action_at: formData.next_action_at || null,
           // Pipeline & Operational fields
-          pipeline_stage: formData.pipeline_stage ?? 'new_lead',
-          pipeline_type: formData.pipeline_type ?? 'calificacion',
+          pipeline_stage: formData.pipeline_stage ?? 'etapa_0_captacion',
           operational_status: formData.operational_status ?? 'ACTIVE',
-          // Real Estate fixed fields
-          re_budget_estimated_mxn: formData.re_budget_estimated_mxn ?? null,
-          re_credit_type: formData.re_credit_type ?? null,
-          re_credit_preapproved: formData.re_credit_preapproved ?? false,
-          re_down_payment_mxn: formData.re_down_payment_mxn ?? null,
-          re_monthly_income_mxn: formData.re_monthly_income_mxn ?? null,
-          re_property_types: formData.re_property_types ?? null,
-          re_bedrooms: formData.re_bedrooms ?? null,
-          re_bathrooms: formData.re_bathrooms ?? null,
-          re_parking_spots: formData.re_parking_spots ?? null,
-          re_requires_parking: formData.re_requires_parking ?? false,
-          re_zones: formData.re_zones ?? null,
-          re_amenities: formData.re_amenities ?? null,
-          re_accepts_pets: formData.re_accepts_pets ?? false,
-          re_reason: formData.re_reason ?? null,
-          re_current_situation: formData.re_current_situation ?? null,
-          // Property interest
-          re_property_interest_id: formData.re_property_interest_id ?? null,
-          // Diagnostic fields
-          re_block_reason: formData.re_block_reason ?? null,
-          re_visit_outcome: formData.re_visit_outcome ?? null,
+          // B2B fields
+          account_id: (formData as any).account_id ?? null,
+          job_title: (formData as any).job_title ?? null,
+          linkedin_url: (formData as any).linkedin_url ?? null,
+          preferred_channel: (formData as any).preferred_channel ?? null,
         })
         .eq('id', id);
 
       if (updateError) throw updateError;
 
       // Trigger conversion tracking if pipeline stage changed
-      const newPipelineStage = formData.pipeline_stage ?? 'new_lead';
+      const newPipelineStage = formData.pipeline_stage ?? 'etapa_0_captacion';
       if (oldPipelineStage && oldPipelineStage !== newPipelineStage) {
         await handlePipelineStageChange(id, oldPipelineStage, newPipelineStage);
       }

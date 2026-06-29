@@ -25,14 +25,14 @@ INSERT INTO public.partners (
   external_sync_enabled
 ) VALUES (
   'randomtruffle',
-  'RT CRM',
+  'Random Truffle',
   'crm.randomtruffle.com',
   ARRAY['localhost', '127.0.0.1'],
   'MX',
   '/assets/rt-logo.png',
   '#6366F1',
   '239 84% 67%',
-  'RT CRM',
+  'Random Truffle',
   'no-reply@randomtruffle.com',
   '© Random Truffle. Todos los derechos reservados.',
   true,
@@ -59,8 +59,8 @@ INSERT INTO public.tenants (
   'randomtruffle',
   'enterprise',
   'active',
-  'paid',
-  999999,
+  'SUBSCRIBED_ACTIVE',
+  0,
   ARRAY[
     'whatsapp', 'ai_followup', 'ai_sdr', 'campaigns',
     'automations', 'segments', 'pipeline', 'accounts',

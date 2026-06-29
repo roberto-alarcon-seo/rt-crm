@@ -19,9 +19,7 @@ import {
   MessagesSquare,
   Megaphone,
   Eye,
-  Handshake,
   Sparkles,
-  Briefcase,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTotalUnreadCount } from "@/hooks/useTotalUnreadCount";
@@ -117,7 +115,6 @@ export function IconSidebar() {
       { icon: TrendingUp, label: "Oportunidades", path: "/pipeline" },
       { icon: Building2, label: "Empresas", path: "/accounts" },
       { icon: Users, label: "Contactos", path: "/contacts" },
-      { icon: Handshake, label: "Clientes", path: "/clients" },
       { icon: CalendarDays, label: "Reuniones", path: "/events" },
       { icon: CalendarClock, label: "Seguimientos", path: "/followups", badgeKey: "followups" },
     ],

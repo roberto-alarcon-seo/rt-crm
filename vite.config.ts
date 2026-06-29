@@ -20,12 +20,26 @@ export default defineConfig(({ mode }) => {
       port: 8080,
     },
     plugins: [
+      {
+        name: "safe-uri-middleware",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            try {
+              if (req.url) decodeURI(req.url);
+              next();
+            } catch {
+              res.writeHead(400, { "Content-Type": "text/plain" });
+              res.end("Bad Request");
+            }
+          });
+        },
+      },
       react(),
       mode === "development" && componentTagger(),
       VitePWA({
         registerType: "autoUpdate",
         devOptions: {
-          enabled: mode === "development",
+          enabled: false,
         },
         includeAssets: [
           `icons/${brand}/ios/180.png`,

@@ -117,7 +117,7 @@ export default function Dashboard() {
         <CriticalAlertsCard
           overdueFollowups={data?.followups.overdueCount || 0}
           ghostingLeads={data?.leads.ghostingCount || 0}
-          leadsWithoutProperty={data?.pipeline.stalledOpportunities || 0}
+          stalledOpportunities={data?.pipeline.stalledOpportunities || 0}
           isLoading={isLoading}
         />
 

@@ -4,8 +4,7 @@ import {
   Loader2, Users,
   Calendar, TrendingUp, AlertTriangle,
   Filter, Search, RefreshCw, X, ChevronDown,
-  DollarSign, Tag, Thermometer, AlertCircle, Building2,
-  UserCheck, Home, Handshake
+  Tag, Thermometer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,7 +92,6 @@ interface ContactCardProps {
 
 function ContactCard({ contact, stages, onMoveToStage, onClick, onConvert }: ContactCardProps) {
   const tempBadge = getTemperatureBadge(contact.lead_temperature);
-  const hasBlockReason = !!contact.re_block_reason;
   const isUnassigned = !contact.assigned_agent_id;
   
   const getInitials = (name: string) => {
@@ -104,8 +102,7 @@ function ContactCard({ contact, stages, onMoveToStage, onClick, onConvert }: Con
     <div 
       className={cn(
         "group p-3 rounded-lg border border-border/50 bg-card hover:bg-muted/50 cursor-pointer transition-all",
-        "hover:shadow-md hover:border-primary/30",
-        hasBlockReason && "border-l-2 border-l-amber-500"
+        "hover:shadow-md hover:border-primary/30"
       )}
       onClick={onClick}
     >
@@ -459,45 +456,6 @@ export default function Pipeline() {
             <p className="text-sm text-muted-foreground">Pipeline comercial B2B — de captación a cierre</p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Pipeline type toggle */}
-            <div className="flex items-center rounded-lg border border-border overflow-hidden">
-              <button
-                onClick={() => { setPipelineType('calificacion'); setFilters(defaultFilters); }}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors",
-                  pipelineType === 'calificacion'
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <UserCheck className="h-3.5 w-3.5" />
-                Compradores
-              </button>
-              <button
-                onClick={() => { setPipelineType('captacion'); setFilters(defaultFilters); }}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors border-l border-border",
-                  pipelineType === 'captacion'
-                    ? "bg-emerald-600 text-white"
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <Home className="h-3.5 w-3.5" />
-                Captación
-              </button>
-              <button
-                onClick={() => { setPipelineType('rentas'); setFilters(defaultFilters); }}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors border-l border-border",
-                  pipelineType === 'rentas'
-                    ? "bg-violet-600 text-white"
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <Handshake className="h-3.5 w-3.5" />
-                Rentas
-              </button>
-            </div>
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
               <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
               Actualizar
@@ -515,7 +473,7 @@ export default function Pipeline() {
           </div>
           <div className="flex items-center gap-2 text-green-500">
             <span className="text-sm">
-              <strong>{totalClosed}</strong> {pipelineType === 'captacion' ? 'vendidos' : 'cerrados'}
+              <strong>{totalClosed}</strong> cerrados
             </span>
           </div>
 
@@ -629,113 +587,6 @@ export default function Pipeline() {
                     </div>
                   </div>
 
-                  {/* Credit Type */}
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium flex items-center gap-2">
-                      <DollarSign className="h-3 w-3" />
-                      Tipo de crédito
-                    </Label>
-                    <div className="space-y-1">
-                      {CREDIT_TYPES.map((type) => (
-                        <div key={type.value} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`credit-${type.value}`}
-                            checked={filters.creditTypes.includes(type.value)}
-                            onCheckedChange={() => toggleArrayFilter('creditTypes', type.value)}
-                          />
-                          <label htmlFor={`credit-${type.value}`} className="text-sm cursor-pointer">
-                            {type.label}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Credit Preapproved */}
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium">Crédito preaprobado</Label>
-                    <div className="flex gap-2">
-                      <Badge
-                        variant={filters.creditPreapproved === true ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => updateFilter('creditPreapproved', filters.creditPreapproved === true ? null : true)}
-                      >
-                        ✓ Sí
-                      </Badge>
-                      <Badge
-                        variant={filters.creditPreapproved === false ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => updateFilter('creditPreapproved', filters.creditPreapproved === false ? null : false)}
-                      >
-                        ✗ No
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Block Reason */}
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium flex items-center gap-2">
-                      <AlertCircle className="h-3 w-3" />
-                      Motivo de bloqueo
-                    </Label>
-                    <div className="flex gap-2 mb-2">
-                      <Badge
-                        variant={filters.hasBlockReason === true ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => updateFilter('hasBlockReason', filters.hasBlockReason === true ? null : true)}
-                      >
-                        Con bloqueo
-                      </Badge>
-                      <Badge
-                        variant={filters.hasBlockReason === false ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => updateFilter('hasBlockReason', filters.hasBlockReason === false ? null : false)}
-                      >
-                        Sin bloqueo
-                      </Badge>
-                    </div>
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {BLOCK_REASONS.map((reason) => (
-                        <div key={reason.value} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`block-${reason.value}`}
-                            checked={filters.blockReasons.includes(reason.value)}
-                            onCheckedChange={() => toggleArrayFilter('blockReasons', reason.value)}
-                          />
-                          <label htmlFor={`block-${reason.value}`} className="text-xs cursor-pointer">
-                            {reason.label}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Property */}
-                  {properties.length > 0 && (
-                    <div className="space-y-2">
-                      <Label className="text-xs font-medium flex items-center gap-2">
-                        <Building2 className="h-3 w-3" />
-                        Propiedad de interés
-                      </Label>
-                      <Select
-                        value={filters.propertyId || 'all'}
-                        onValueChange={(v) => updateFilter('propertyId', v === 'all' ? null : v)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Todas las propiedades" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all" className="text-xs">Todas las propiedades</SelectItem>
-                          {properties.map((p) => (
-                            <SelectItem key={p.id} value={p.id} className="text-xs">
-                              {p.property_code} — {p.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
                   {/* Source */}
                   {availableSources.length > 0 && (
                     <div className="space-y-2">
@@ -771,24 +622,6 @@ export default function Pipeline() {
                   <X 
                     className="h-3 w-3 cursor-pointer" 
                     onClick={() => updateFilter('temperatures', [])} 
-                  />
-                </Badge>
-              )}
-              {filters.creditTypes.length > 0 && (
-                <Badge variant="secondary" className="gap-1">
-                  Crédito: {filters.creditTypes.length}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => updateFilter('creditTypes', [])} 
-                  />
-                </Badge>
-              )}
-              {filters.hasBlockReason !== null && (
-                <Badge variant="secondary" className="gap-1">
-                  {filters.hasBlockReason ? 'Con bloqueo' : 'Sin bloqueo'}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => updateFilter('hasBlockReason', null)} 
                   />
                 </Badge>
               )}
@@ -832,11 +665,7 @@ export default function Pipeline() {
             name: convertingContact.name,
             re_property_interest_id: convertingContact.re_property_interest_id,
           }}
-          defaultDealType={
-            pipelineType === 'rentas'    ? 'renta'
-            : pipelineType === 'captacion' ? 'captacion'
-            : 'compra'
-          }
+          defaultDealType="compra"
         />
       )}
     </div>

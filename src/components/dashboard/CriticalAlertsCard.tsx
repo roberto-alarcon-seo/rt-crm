@@ -22,15 +22,15 @@ interface AlertItem {
 interface CriticalAlertsCardProps {
   overdueFollowups: number;
   ghostingLeads: number;
-  leadsWithoutProperty: number;
+  stalledOpportunities: number;
   isLoading?: boolean;
 }
 
-export function CriticalAlertsCard({ 
-  overdueFollowups, 
+export function CriticalAlertsCard({
+  overdueFollowups,
   ghostingLeads,
-  leadsWithoutProperty,
-  isLoading 
+  stalledOpportunities,
+  isLoading
 }: CriticalAlertsCardProps) {
   const navigate = useNavigate();
 
@@ -70,7 +70,7 @@ export function CriticalAlertsCard({
     });
   }
   
-  if (leadsWithoutProperty > 0) {
+  if (stalledOpportunities > 0) {
     allAlerts.push({
       id: 'stalled',
       icon: <Users className="h-4 w-4 text-muted-foreground" />,

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Building2, Users, FileText, LogOut, User, Shield, Wallet, LibraryBig, Handshake, FlaskConical } from "lucide-react";
+import { Building2, Users, FileText, LogOut, User, Shield, Wallet, Handshake, FlaskConical } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,7 +29,6 @@ const navItems = [
   { title: "Tenants", url: "/admin/tenants", icon: Building2 },
   { title: "Super Wallet", url: "/admin/super-wallet", icon: Wallet },
   { title: "Usuarios", url: "/admin/users", icon: Users },
-  { title: "Plantillas Globales", url: "/admin/master-templates", icon: LibraryBig },
   { title: "Logs", url: "/admin/logs", icon: FileText },
   { title: "Diagnóstico Asignación", url: "/admin/assignment-tests", icon: FlaskConical },
 ];
