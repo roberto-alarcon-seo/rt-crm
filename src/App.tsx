@@ -71,6 +71,7 @@ import AIAssistant from "./pages/AIAssistant";
 import SettingsSDRAgent from "./pages/settings/SettingsSDRAgent";
 import SettingsOpportunityAgent from "./pages/settings/SettingsOpportunityAgent";
 import SettingsConversions from "./pages/settings/SettingsConversions";
+import SettingsWidget from "./pages/settings/SettingsWidget";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -231,6 +232,7 @@ const App = () => (
               <Route path="/settings/knowledge-base/:id" element={<ProtectedRoute><MainLayout><KnowledgeBaseEditor /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/developer" element={<ProtectedRoute><MainLayout><SettingsDeveloper /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/conversions" element={<ProtectedRoute><MainLayout><SettingsConversions /></MainLayout></ProtectedRoute>} />
+              <Route path="/settings/widget" element={<ProtectedRoute><MainLayout><SettingsWidget /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/quick-automations" element={<Navigate to="/settings/whatsapp" replace />} />
               <Route path="/settings/assignment-rules" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><SettingsAssignmentRules /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/templates" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><Templates /></MainLayout></ProtectedRoute>} />

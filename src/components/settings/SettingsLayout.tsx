@@ -5,7 +5,7 @@ import {
   MessageSquare,
   Settings as SettingsIcon, ListPlus, Bot, BookOpen, Code2, ShieldCheck, BarChart3,
   MessagesSquare, Brain, UserSquare2, Sparkles, FileText, Users, RefreshCw, TrendingUp,
-  Building2,
+  Building2, Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,6 +31,14 @@ const menuItems: MenuItem[] = [
     icon: MessageSquare,
     title: "WhatsApp",
     description: "Estado de conexión",
+    group: "Canales",
+  },
+  {
+    id: "widget",
+    path: "/settings/widget",
+    icon: Globe,
+    title: "Widget Web",
+    description: "Chat en tu sitio web",
     group: "Canales",
   },
   {
