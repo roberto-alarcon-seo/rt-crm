@@ -3,8 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveTenantId } from '@/hooks/useEffectiveTenantId';
 import { toast } from 'sonner';
 
-
-export type KBCategory = 
+export type KBCategory =
   | 'general_info'
   | 'financing'
   | 'purchase_process'
@@ -15,6 +14,8 @@ export type KBCategory =
   | 'objections'
   | 'other';
 
+export type KBEntryType = 'qa' | 'info' | 'url' | 'file';
+
 export interface KnowledgeBaseEntry {
   id: string;
   tenant_id: string;
@@ -23,8 +24,26 @@ export interface KnowledgeBaseEntry {
   answer: string;
   tags: string[];
   is_active: boolean;
+  // New fields
+  collection: string;
+  entry_type: KBEntryType;
+  url: string | null;
+  file_url: string | null;
+  file_name: string | null;
+  media_type: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface KBCollection {
+  id: string;
+  tenant_id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  sort_order: number;
+  created_at: string;
 }
 
 export const KB_CATEGORY_LABELS: Record<KBCategory, string> = {
@@ -39,6 +58,15 @@ export const KB_CATEGORY_LABELS: Record<KBCategory, string> = {
   other: 'Otros',
 };
 
+export const KB_ENTRY_TYPE_LABELS: Record<KBEntryType, string> = {
+  qa: 'Pregunta y Respuesta',
+  info: 'Bloque de Información',
+  url: 'Enlace / URL',
+  file: 'Archivo / Documento',
+};
+
+// ── Knowledge Base Entries ────────────────────────────────────────────────────
+
 export function useKnowledgeBase() {
   const tenantId = useEffectiveTenantId();
 
@@ -51,7 +79,7 @@ export function useKnowledgeBase() {
         .from('ai_knowledge_base')
         .select('*')
         .eq('tenant_id', tenantId)
-        .order('category')
+        .order('collection')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -153,6 +181,80 @@ export function useToggleKBEntry() {
     },
     onError: (error) => {
       toast.error('Error al cambiar estado', { description: error.message });
+    },
+  });
+}
+
+// ── Collections ───────────────────────────────────────────────────────────────
+
+export function useKBCollections() {
+  const tenantId = useEffectiveTenantId();
+
+  return useQuery({
+    queryKey: ['kb-collections', tenantId],
+    queryFn: async () => {
+      if (!tenantId) return [];
+
+      const { data, error } = await supabase
+        .from('kb_collections' as never)
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('sort_order')
+        .order('name');
+
+      if (error) throw error;
+      return data as KBCollection[];
+    },
+    enabled: !!tenantId,
+  });
+}
+
+export function useCreateKBCollection() {
+  const queryClient = useQueryClient();
+  const tenantId = useEffectiveTenantId();
+
+  return useMutation({
+    mutationFn: async (col: Pick<KBCollection, 'name' | 'description' | 'icon' | 'color'>) => {
+      if (!tenantId) throw new Error('No tenant');
+
+      const { data, error } = await supabase
+        .from('kb_collections' as never)
+        .insert({ ...col, tenant_id: tenantId } as never)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as KBCollection;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kb-collections'] });
+      toast.success('Colección creada');
+    },
+    onError: (error) => {
+      toast.error('Error al crear colección', { description: (error as Error).message });
+    },
+  });
+}
+
+export function useDeleteKBCollection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('kb_collections' as never)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kb-collections'] });
+      queryClient.invalidateQueries({ queryKey: ['knowledge-base'] });
+      toast.success('Colección eliminada');
+    },
+    onError: (error) => {
+      toast.error('Error al eliminar colección', { description: (error as Error).message });
     },
   });
 }

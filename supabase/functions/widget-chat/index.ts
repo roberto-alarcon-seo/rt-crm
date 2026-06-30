@@ -274,7 +274,7 @@ serve(async (req) => {
       supabase.from("tenant_ai_settings").select("*").eq("tenant_id", tenantId).single(),
       supabase
         .from("ai_knowledge_base")
-        .select("question, answer, category")
+        .select("question, answer, category, collection, entry_type, url, file_name")
         .eq("tenant_id", tenantId)
         .eq("is_active", true)
         .limit(80),
@@ -283,9 +283,19 @@ serve(async (req) => {
     // 5. Build prompt
     const kbBlock = kb?.length
       ? "\n\nBASE DE CONOCIMIENTO:\n" +
-        kb.map((e: { question: string; answer: string; category: string }) =>
-          `[${e.category}] P: ${e.question}\nR: ${e.answer}`
-        ).join("\n\n")
+        kb.map((e: { question: string; answer: string; category: string; collection?: string; entry_type?: string; url?: string; file_name?: string }) => {
+          const prefix = `[${e.collection || e.category}]`;
+          switch (e.entry_type) {
+            case 'info':
+              return `${prefix} INFO: ${e.question ? e.question + '\n' : ''}${e.answer}`;
+            case 'url':
+              return `${prefix} RECURSO: ${e.question}\nURL: ${e.url || ''}\n${e.answer || ''}`;
+            case 'file':
+              return `${prefix} DOCUMENTO: ${e.question}${e.file_name ? ' (' + e.file_name + ')' : ''}\n${e.answer}`;
+            default:
+              return `${prefix} P: ${e.question}\nR: ${e.answer}`;
+          }
+        }).join("\n\n")
       : "\n\nBASE DE CONOCIMIENTO: (sin entradas configuradas — responde solo con información general sobre la empresa)";
 
     const captureBlock = buildCaptureInstructions(

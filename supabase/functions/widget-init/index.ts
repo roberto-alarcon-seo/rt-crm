@@ -82,16 +82,28 @@ serve(async (req) => {
       session = newSession;
     }
 
-    // 4. Resolve primary color (widget setting → tenant branding → default)
+    // 4. Resolve primary color and logo from partner branding
     let primaryColor = settings.primary_color;
-    if (!primaryColor) {
-      const { data: tenant } = await supabase
-        .from("tenants")
-        .select("branding")
-        .eq("id", settings.tenant_id)
-        .single();
-      primaryColor = (tenant?.branding as Record<string, string> | null)?.primary_color || "#6366F1";
+    let logoUrl: string | null = null;
+
+    const { data: partner } = await supabase
+      .from("partners")
+      .select("primary_color_hex, branding")
+      .eq("is_active", true)
+      .limit(1)
+      .single();
+
+    if (partner) {
+      if (!primaryColor) {
+        primaryColor = (partner.branding as Record<string, string> | null)?.primary_color
+          ? `hsl(${(partner.branding as Record<string, string>).primary_color})`
+          : partner.primary_color_hex || "#6366F1";
+      }
+      const branding = partner.branding as Record<string, string> | null;
+      logoUrl = branding?.logo_collapsed_light_url || branding?.logo_expanded_light_url || null;
     }
+
+    if (!primaryColor) primaryColor = "#6366F1";
 
     return new Response(JSON.stringify({
       session_token: session.session_token,
@@ -99,7 +111,15 @@ serve(async (req) => {
         greeting_name: settings.greeting_name,
         greeting_message: settings.greeting_message,
         primary_color: primaryColor,
+        logo_url: logoUrl,
         position: settings.position,
+        display_mode: (settings as Record<string, unknown>).display_mode || "floating",
+        bubble_icon: (settings as Record<string, unknown>).bubble_icon || "logo",
+        powered_by_text: (settings as Record<string, unknown>).powered_by_text || "RT CRM",
+        cta_buttons: (settings as Record<string, unknown>).cta_buttons || [],
+        header_subtitle: (settings as Record<string, unknown>).header_subtitle || "",
+        theme: (settings as Record<string, unknown>).theme || "light",
+        product_chips: (settings as Record<string, unknown>).product_chips || [],
         capture_name: settings.capture_name,
         capture_email: settings.capture_email,
         capture_phone: settings.capture_phone,

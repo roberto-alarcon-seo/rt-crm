@@ -15,6 +15,13 @@ export interface WidgetSettings {
   capture_email: boolean;
   capture_phone: boolean;
   position: "bottom-right" | "bottom-left";
+  display_mode: "floating" | "sidebar";
+  bubble_icon: "logo" | "sparkles" | "bot" | "zap";
+  powered_by_text: string;
+  cta_buttons: Array<{ label: string; icon: string; url: string }>;
+  header_subtitle: string;
+  theme: "light" | "dark";
+  product_chips: Array<{ label: string; icon: string; color: string; url: string }>;
   initial_suggestions: string[];
   created_at: string;
   updated_at: string;
@@ -37,22 +44,33 @@ export function useWidgetSettings() {
     if (!tenantId) return;
     setIsLoading(true);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("widget_settings" as never)
         .select("*")
         .eq("tenant_id", tenantId)
-        .single();
+        .maybeSingle() as { data: WidgetSettings | null; error: { code: string; message: string } | null };
+
+      if (error) {
+        console.error("[useWidgetSettings] fetch error:", error);
+        toast.error(`Error al cargar configuración del widget: ${error.message}`);
+        return;
+      }
 
       if (data) {
-        setSettings(data as unknown as WidgetSettings);
+        setSettings(data);
       } else {
-        // No settings row yet — create defaults
-        const { data: created } = await supabase
+        const { data: created, error: insertError } = await supabase
           .from("widget_settings" as never)
-          .insert({ tenant_id: tenantId })
+          .insert({ tenant_id: tenantId } as never)
           .select()
-          .single();
-        if (created) setSettings(created as unknown as WidgetSettings);
+          .single() as { data: WidgetSettings | null; error: { code: string; message: string } | null };
+
+        if (insertError) {
+          console.error("[useWidgetSettings] insert error:", insertError);
+          toast.error(`Error al crear configuración del widget: ${insertError.message}`);
+          return;
+        }
+        if (created) setSettings(created);
       }
     } finally {
       setIsLoading(false);
@@ -84,7 +102,8 @@ export function useWidgetSettings() {
 
   const save = useCallback(
     async (updates: Partial<Omit<WidgetSettings, "id" | "tenant_id" | "widget_token" | "created_at" | "updated_at">>) => {
-      if (!tenantId || !settings) return;
+      if (!tenantId) { toast.error("Sin tenant"); return; }
+      if (!settings) { toast.error("Configuración no cargada, recarga la página"); return; }
       setIsSaving(true);
       try {
         const { data, error } = await supabase
@@ -92,13 +111,16 @@ export function useWidgetSettings() {
           .update(updates as never)
           .eq("tenant_id", tenantId)
           .select()
-          .single();
+          .single() as { data: WidgetSettings | null; error: { code: string; message: string } | null };
 
-        if (error) throw error;
-        setSettings(data as unknown as WidgetSettings);
+        if (error) {
+          console.error("[useWidgetSettings] save error:", error);
+          throw new Error(error.message);
+        }
+        if (data) setSettings(data);
         toast.success("Widget guardado");
-      } catch {
-        toast.error("Error al guardar el widget");
+      } catch (err) {
+        toast.error(`Error al guardar: ${err instanceof Error ? err.message : "error desconocido"}`);
       } finally {
         setIsSaving(false);
       }

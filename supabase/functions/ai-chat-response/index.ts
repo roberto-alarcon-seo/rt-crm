@@ -314,7 +314,7 @@ serve(async (req) => {
     // Get knowledge base entries
     const { data: kbEntries } = await supabase
       .from('ai_knowledge_base')
-      .select('id, question, answer, category')
+      .select('id, question, answer, category, collection, entry_type, url, file_name')
       .eq('tenant_id', tenant_id)
       .eq('is_active', true);
 
@@ -705,7 +705,15 @@ serve(async (req) => {
       : '';
 
     const knowledgeContext = knowledgeBase.length > 0
-      ? `BASE DE CONOCIMIENTO GENERAL:\n${knowledgeBase.map(e => `Q: ${e.question}\nA: ${e.answer}`).join('\n\n')}`
+      ? `BASE DE CONOCIMIENTO GENERAL:\n${knowledgeBase.map((e: { question: string; answer: string; category: string; collection?: string; entry_type?: string; url?: string; file_name?: string }) => {
+          const prefix = `[${(e as { collection?: string }).collection || e.category}]`;
+          switch ((e as { entry_type?: string }).entry_type) {
+            case 'info': return `${prefix} INFO: ${e.question ? e.question + '\n' : ''}${e.answer}`;
+            case 'url': return `${prefix} RECURSO: ${e.question}\nURL: ${(e as { url?: string }).url || ''}\n${e.answer || ''}`;
+            case 'file': return `${prefix} DOCUMENTO: ${e.question}${(e as { file_name?: string }).file_name ? ' (' + (e as { file_name?: string }).file_name + ')' : ''}\n${e.answer}`;
+            default: return `${prefix} P: ${e.question}\nR: ${e.answer}`;
+          }
+        }).join('\n\n')}`
       : '';
 
     const behaviorInstruction = aiSettings.behavior_prompt

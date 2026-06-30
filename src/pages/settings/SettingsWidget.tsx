@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Globe, Copy, Check, RefreshCw, ToggleLeft, MessageSquare, Users, BarChart3, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Globe, Copy, Check, RefreshCw, MessageSquare, Users, BarChart3, ChevronDown, ChevronUp, Sparkles, Bot, Zap, PanelRight, Layers, Sun, Moon, Plus, Trash2, Link, ExternalLink } from 'lucide-react';
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,21 +27,38 @@ export default function SettingsWidget() {
     greeting_name: string;
     greeting_message: string;
     position: 'bottom-right' | 'bottom-left';
+    display_mode: 'floating' | 'sidebar';
+    bubble_icon: 'logo' | 'sparkles' | 'bot' | 'zap';
+    powered_by_text: string;
+    cta_buttons: Array<{ label: string; icon: string; url: string }>;
+    header_subtitle: string;
+    theme: 'light' | 'dark';
+    product_chips: Array<{ label: string; icon: string; color: string; url: string }>;
     capture_name: boolean;
     capture_email: boolean;
     capture_phone: boolean;
     initial_suggestions: string[];
   } | null>(null);
 
-  // Initialize draft from settings once loaded
-  if (settings && !draft) {
-    setSuggestionsText((settings.initial_suggestions || []).join('\n'));
-  }
+  // Initialize suggestionsText once when settings first loads
+  useEffect(() => {
+    if (settings && !draft) {
+      setSuggestionsText((settings.initial_suggestions || []).join('\n'));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings]);
 
   const effectiveDraft = draft || (settings ? {
     greeting_name: settings.greeting_name,
     greeting_message: settings.greeting_message,
     position: settings.position,
+    display_mode: settings.display_mode || 'floating',
+    bubble_icon: settings.bubble_icon || 'logo',
+    powered_by_text: settings.powered_by_text ?? 'Random Truffle',
+    cta_buttons: settings.cta_buttons || [],
+    header_subtitle: settings.header_subtitle ?? '',
+    theme: settings.theme || 'light',
+    product_chips: settings.product_chips || [],
     capture_name: settings.capture_name,
     capture_email: settings.capture_email,
     capture_phone: settings.capture_phone,
@@ -196,6 +213,108 @@ export default function SettingsWidget() {
           </CardContent>
         </Card>
 
+        {/* Display mode */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary" />
+              Modo de visualización
+            </CardTitle>
+            <CardDescription>Cómo aparece el widget en el sitio</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { value: 'floating', icon: MessageSquare, label: 'Flotante', desc: 'Burbuja en esquina + ventana emergente' },
+                { value: 'sidebar', icon: PanelRight, label: 'Barra lateral', desc: 'Panel deslizable desde el borde' },
+              ] as const).map(({ value, icon: Icon, label, desc }) => {
+                const active = (effectiveDraft?.display_mode ?? 'floating') === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => patch('display_mode', value)}
+                    className={`text-left p-3 rounded-xl border-2 transition-all ${active ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                  >
+                    <Icon className={`h-5 w-5 mb-1.5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <p className={`text-sm font-medium ${active ? 'text-primary' : ''}`}>{label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bubble icon */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Ícono del botón
+            </CardTitle>
+            <CardDescription>Ícono que aparece en la burbuja o la pestaña lateral</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-2">
+              {([
+                { value: 'logo', icon: Globe, label: 'Logo' },
+                { value: 'sparkles', icon: Sparkles, label: 'IA' },
+                { value: 'bot', icon: Bot, label: 'Bot' },
+                { value: 'zap', icon: Zap, label: 'Zap' },
+              ] as const).map(({ value, icon: Icon, label }) => {
+                const active = (effectiveDraft?.bubble_icon ?? 'logo') === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => patch('bubble_icon', value)}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${active ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                  >
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center ${active ? 'bg-primary' : 'bg-muted'}`}>
+                      <Icon className={`h-4 w-4 ${active ? 'text-white' : 'text-muted-foreground'}`} />
+                    </div>
+                    <span className={`text-xs font-medium ${active ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Theme */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Sun className="h-4 w-4 text-primary" />
+              Tema del widget
+            </CardTitle>
+            <CardDescription>Apariencia general del chat</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { value: 'light', icon: Sun, label: 'Claro', desc: 'Fondo blanco, texto oscuro' },
+                { value: 'dark', icon: Moon, label: 'Oscuro', desc: 'Fondo oscuro, texto claro' },
+              ] as const).map(({ value, icon: Icon, label, desc }) => {
+                const active = (effectiveDraft?.theme ?? 'light') === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => patch('theme', value)}
+                    className={`text-left p-3 rounded-xl border-2 transition-all ${active ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                  >
+                    <Icon className={`h-5 w-5 mb-1.5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <p className={`text-sm font-medium ${active ? 'text-primary' : ''}`}>{label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Personalization */}
         <Card>
           <CardHeader className="pb-3">
@@ -215,20 +334,28 @@ export default function SettingsWidget() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Posición</Label>
-                <Select
-                  value={effectiveDraft?.position ?? 'bottom-right'}
-                  onValueChange={(v) => patch('position', v as 'bottom-right' | 'bottom-left')}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bottom-right">Inferior derecho</SelectItem>
-                    <SelectItem value="bottom-left">Inferior izquierdo</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Subtítulo del header</Label>
+                <Input
+                  value={effectiveDraft?.header_subtitle ?? ''}
+                  onChange={(e) => patch('header_subtitle', e.target.value)}
+                  placeholder="Tu eslogan o descripción"
+                />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Posición</Label>
+              <Select
+                value={effectiveDraft?.position ?? 'bottom-right'}
+                onValueChange={(v) => patch('position', v as 'bottom-right' | 'bottom-left')}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bottom-right">Inferior derecho</SelectItem>
+                  <SelectItem value="bottom-left">Inferior izquierdo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">
@@ -240,6 +367,16 @@ export default function SettingsWidget() {
                 rows={2}
                 className="resize-none"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Pie de página del widget</Label>
+              <Input
+                value={effectiveDraft?.powered_by_text ?? ''}
+                onChange={(e) => patch('powered_by_text', e.target.value)}
+                placeholder="Random Truffle"
+              />
+              <p className="text-xs text-muted-foreground">Aparece como "Powered by …" en la parte inferior del chat</p>
             </div>
 
             {/* Suggestions collapsible */}
@@ -305,6 +442,209 @@ export default function SettingsWidget() {
                 />
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        {/* Product chips */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary" />
+              Píldoras de producto
+            </CardTitle>
+            <CardDescription>
+              Botones fijos con color propio para destacar productos, servicios o categorías. Clic envía como mensaje o abre URL.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(effectiveDraft?.product_chips || []).map((chip, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="relative shrink-0">
+                  <input
+                    type="color"
+                    value={chip.color || '#6366F1'}
+                    onChange={(e) => {
+                      const updated = [...(effectiveDraft?.product_chips || [])];
+                      updated[i] = { ...chip, color: e.target.value };
+                      patch('product_chips', updated);
+                    }}
+                    className="w-9 h-9 rounded-lg border border-border cursor-pointer p-0.5 bg-transparent"
+                    title="Color"
+                  />
+                </div>
+                <Input
+                  value={chip.icon}
+                  onChange={(e) => {
+                    const updated = [...(effectiveDraft?.product_chips || [])];
+                    updated[i] = { ...chip, icon: e.target.value };
+                    patch('product_chips', updated);
+                  }}
+                  placeholder="A"
+                  className="w-14 text-center text-base px-2"
+                  maxLength={2}
+                  title="Ícono (emoji o letra)"
+                />
+                <Input
+                  value={chip.label}
+                  onChange={(e) => {
+                    const updated = [...(effectiveDraft?.product_chips || [])];
+                    updated[i] = { ...chip, label: e.target.value };
+                    patch('product_chips', updated);
+                  }}
+                  placeholder="Nombre del producto"
+                  className="flex-1"
+                />
+                <Input
+                  value={chip.url}
+                  onChange={(e) => {
+                    const updated = [...(effectiveDraft?.product_chips || [])];
+                    updated[i] = { ...chip, url: e.target.value };
+                    patch('product_chips', updated);
+                  }}
+                  placeholder="URL (opcional)"
+                  className="flex-[2]"
+                  type="url"
+                  title="Si está vacío, envía el nombre como mensaje al chat"
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => {
+                    const updated = (effectiveDraft?.product_chips || []).filter((_, j) => j !== i);
+                    patch('product_chips', updated);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+
+            {(effectiveDraft?.product_chips || []).length < 8 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  const colors = ['#6366F1','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#EC4899','#84CC16'];
+                  const next = colors[(effectiveDraft?.product_chips || []).length % colors.length];
+                  const updated = [...(effectiveDraft?.product_chips || []), { label: '', icon: '', color: next, url: '' }];
+                  patch('product_chips', updated);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Agregar producto
+              </Button>
+            )}
+
+            {(effectiveDraft?.product_chips || []).some(c => c.label) && (
+              <div className="pt-1">
+                <p className="text-xs text-muted-foreground mb-2">Vista previa:</p>
+                <div className="flex flex-wrap gap-2">
+                  {(effectiveDraft?.product_chips || []).filter(c => c.label).map((chip, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-medium"
+                      style={{ backgroundColor: chip.color || '#6366F1' }}
+                    >
+                      {chip.icon && <span className="text-sm leading-none">{chip.icon}</span>}
+                      {chip.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* CTA Buttons */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-primary" />
+              Botones de acción (CTA)
+            </CardTitle>
+            <CardDescription>
+              Botones fijos en el chat que redirigen a URLs externas. Ej: "Agendar Demo", "Ver precios"
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(effectiveDraft?.cta_buttons || []).map((btn, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  value={btn.icon}
+                  onChange={(e) => {
+                    const updated = [...(effectiveDraft?.cta_buttons || [])];
+                    updated[i] = { ...btn, icon: e.target.value };
+                    patch('cta_buttons', updated);
+                  }}
+                  placeholder="📅"
+                  className="w-14 text-center text-lg px-2"
+                />
+                <Input
+                  value={btn.label}
+                  onChange={(e) => {
+                    const updated = [...(effectiveDraft?.cta_buttons || [])];
+                    updated[i] = { ...btn, label: e.target.value };
+                    patch('cta_buttons', updated);
+                  }}
+                  placeholder="Agendar Demo"
+                  className="flex-1"
+                />
+                <Input
+                  value={btn.url}
+                  onChange={(e) => {
+                    const updated = [...(effectiveDraft?.cta_buttons || [])];
+                    updated[i] = { ...btn, url: e.target.value };
+                    patch('cta_buttons', updated);
+                  }}
+                  placeholder="https://calendly.com/..."
+                  className="flex-[2]"
+                  type="url"
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => {
+                    const updated = (effectiveDraft?.cta_buttons || []).filter((_, j) => j !== i);
+                    patch('cta_buttons', updated);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+
+            {(effectiveDraft?.cta_buttons || []).length < 4 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  const updated = [...(effectiveDraft?.cta_buttons || []), { icon: '', label: '', url: '' }];
+                  patch('cta_buttons', updated);
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Agregar botón
+              </Button>
+            )}
+
+            {(effectiveDraft?.cta_buttons || []).length > 0 && (
+              <div className="pt-1">
+                <p className="text-xs text-muted-foreground mb-2">Vista previa:</p>
+                <div className="flex flex-wrap gap-2">
+                  {(effectiveDraft?.cta_buttons || []).filter(b => b.label).map((btn, i) => (
+                    <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary text-primary text-xs font-medium">
+                      {btn.icon && <span>{btn.icon}</span>}
+                      {btn.label}
+                      <Link className="h-3 w-3 opacity-60" />
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

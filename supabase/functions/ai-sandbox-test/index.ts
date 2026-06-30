@@ -256,13 +256,21 @@ serve(async (req) => {
     if (tenant_id) {
       const { data: kb } = await supabase
         .from("ai_knowledge_base")
-        .select("question, answer, category")
+        .select("question, answer, category, collection, entry_type, url, file_name")
         .eq("tenant_id", tenant_id)
         .eq("is_active", true)
         .limit(100);
       if (kb?.length) {
         kbContext = "\n\nBASE DE CONOCIMIENTO:\n" +
-          kb.map((k: any) => `- [${k.category || "general"}] P: ${k.question}\n  R: ${k.answer}`).join("\n");
+          kb.map((k: any) => {
+            const prefix = `[${k.collection || k.category || "general"}]`;
+            switch (k.entry_type) {
+              case 'info': return `${prefix} INFO: ${k.question ? k.question + '\n' : ''}${k.answer}`;
+              case 'url': return `${prefix} RECURSO: ${k.question}\nURL: ${k.url || ''}\n${k.answer || ''}`;
+              case 'file': return `${prefix} DOCUMENTO: ${k.question}${k.file_name ? ' (' + k.file_name + ')' : ''}\n${k.answer}`;
+              default: return `${prefix} P: ${k.question}\nR: ${k.answer}`;
+            }
+          }).join("\n\n");
       }
     }
 
