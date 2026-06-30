@@ -52,7 +52,6 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import CompleteSignup from "./pages/auth/CompleteSignup";
 import SsoCallback from "./pages/auth/SsoCallback";
-import Landing from "./pages/Landing";
 import Admin from "./pages/Admin";
 import AdminTenants from "./pages/admin/AdminTenants";
 import TenantAdminDetail from "./pages/admin/TenantAdminDetail";
@@ -159,8 +158,6 @@ const App = () => (
             <MobileRouteGuard>
             <Suspense fallback={<RouteFallback />}>
             <Routes>
-              {/* Public landing for unauthenticated tenant users */}
-              <Route path="/welcome" element={<Landing />} />
               {/* Direct login for tenant users (direct/hybrid auth_mode partners) */}
               <Route path="/login" element={<TenantLogin />} />
               {/* Admin login (super_admin only) */}

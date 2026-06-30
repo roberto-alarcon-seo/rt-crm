@@ -14,8 +14,7 @@ const MOBILE_ALLOWED_PATHS = [
   "/admin",
   "/support",
   // Public auth routes — must be allowed or the guard creates an infinite redirect
-  // loop: ProtectedRoute → /welcome → MobileRouteGuard → / → ProtectedRoute → …
-  "/welcome",
+  // loop: ProtectedRoute → /login → MobileRouteGuard → / → ProtectedRoute → …
   "/login",
   "/rs_admin",
 ];

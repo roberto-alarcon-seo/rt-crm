@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,8 +14,23 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: 'La contraseña es requerida' }),
 });
 
+const SSO_ERROR_REASONS: Record<string, string> = {
+  invalid_token: 'El enlace de acceso es inválido.',
+  missing_token: 'Falta el token de acceso.',
+  invalid_claims: 'El token no contiene la información necesaria.',
+  tenant_not_found: 'La cuenta no existe en este sistema.',
+  user_not_found: 'No se encontró tu usuario en este tenant.',
+  user_inactive: 'Tu usuario está inactivo. Contacta al administrador.',
+  link_generation_failed: 'No se pudo generar la sesión. Intenta de nuevo.',
+  server_misconfigured: 'El servidor no está configurado correctamente.',
+  client_error: 'Ocurrió un error inesperado. Intenta de nuevo.',
+  max_users_reached:
+    'Se ha alcanzado el límite de usuarios permitidos para esta cuenta. Por favor, solicita más asientos en tu panel principal.',
+};
+
 const TenantLogin = () => {
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
   const { signIn, signOut, user, isSuperAdmin, isLoading: authLoading } = useAuth();
   const { partner, isLoading: brandingLoading } = usePartnerBranding();
   const { theme } = useTheme();
@@ -38,6 +53,19 @@ const TenantLogin = () => {
       navigate('/inbox', { replace: true });
     }
   }, [user, isSuperAdmin, authLoading, navigate]);
+
+  // Surface errors bounced here from a failed admin impersonation attempt
+  // (see SsoCallback.tsx, which redirects to /login?error=sso_denied&reason=...)
+  useEffect(() => {
+    if (params.get('error') !== 'sso_denied') return;
+    const reason = params.get('reason') ?? 'unknown';
+    const detail = SSO_ERROR_REASONS[reason] ?? 'Acceso denegado o sesión expirada.';
+    toast.error('Acceso denegado o sesión expirada', { description: detail });
+    const next = new URLSearchParams(params);
+    next.delete('error');
+    next.delete('reason');
+    setParams(next, { replace: true });
+  }, [params, setParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,8 +122,14 @@ const TenantLogin = () => {
           }}
         />
 
-        {/* Card: visible on desktop, transparent/flat on mobile */}
-        <div className="relative sm:rounded-[28px] sm:bg-card/80 sm:backdrop-blur-2xl sm:border sm:border-border sm:px-10 sm:py-12 sm:shadow-2xl px-0 py-0">
+        {/* Card: visible on desktop, transparent/flat on mobile.
+            Border color uses a neutral fallback while branding loads, so we never
+            flash the wrong --border/--input tokens before the partner theme applies. */}
+        <div
+          className={`relative sm:rounded-[28px] sm:bg-card/80 sm:backdrop-blur-2xl sm:border sm:px-10 sm:py-12 sm:shadow-2xl px-0 py-0 ${
+            brandingLoading ? 'sm:border-white/10' : 'sm:border-border'
+          }`}
+        >
           {/* Logo */}
           <div className="flex justify-center mb-8 sm:mb-7 min-h-[56px] sm:min-h-[48px] items-center">
             {brandingLoading ? (
@@ -128,20 +162,24 @@ const TenantLogin = () => {
               >
                 Email
               </label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 transition-colors group-focus-within:text-primary" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu@correo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 pl-11 rounded-xl"
-                  disabled={isLoading}
-                  autoComplete="email"
-                  inputMode="email"
-                />
-              </div>
+              {brandingLoading ? (
+                <div className="h-12 rounded-xl bg-muted/40 animate-pulse" />
+              ) : (
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 transition-colors group-focus-within:text-primary" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="tu@correo.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-12 pl-11 rounded-xl"
+                    disabled={isLoading}
+                    autoComplete="email"
+                    inputMode="email"
+                  />
+                </div>
+              )}
               {errors.email && (
                 <p className="text-xs text-destructive">{errors.email}</p>
               )}
@@ -163,28 +201,32 @@ const TenantLogin = () => {
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 transition-colors group-focus-within:text-primary" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 pl-11 pr-12 rounded-xl"
-                  disabled={isLoading}
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors p-1"
-                  tabIndex={-1}
-                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              {brandingLoading ? (
+                <div className="h-12 rounded-xl bg-muted/40 animate-pulse" />
+              ) : (
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60 transition-colors group-focus-within:text-primary" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-12 pl-11 pr-12 rounded-xl"
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors p-1"
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              )}
               {errors.password && (
                 <p className="text-xs text-destructive">{errors.password}</p>
               )}
@@ -196,7 +238,7 @@ const TenantLogin = () => {
               style={{
                 background: `linear-gradient(135deg, ${partner.primaryColorHex}, ${partner.accentColorHex ?? partner.primaryColorHex})`,
               }}
-              disabled={isLoading}
+              disabled={isLoading || brandingLoading}
             >
               {isLoading ? (
                 <>

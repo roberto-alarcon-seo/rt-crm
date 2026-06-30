@@ -7,9 +7,15 @@ import { buildDefaultTheme, applyPartnerTheme } from "./lib/partnerTheme.ts";
 // Synchronously apply partner brand tokens + surface class before first render.
 // This eliminates flash of wrong colors on initial load.
 const partner = resolvePartnerByHostname(window.location.hostname);
-const savedTheme = localStorage.getItem("brokia-theme") ?? "partner";
+const savedTheme = localStorage.getItem("brokia-theme");
+// Default to dark when there's no explicit preference. "partner"/no-value
+// used to fall through to "light" here, which applies the .light CSS class
+// (near-white --border/--input) for the instant before the branded dark
+// colors get computed and override it — a visible flash on first paint.
+// No UI lets users pick "light" vs "partner" separately (see UserMenu.tsx),
+// so defaulting unset state straight to dark removes that window entirely.
 const surfaceMode: "light" | "dark" =
-  savedTheme === "dark" ? "dark" : "light";
+  savedTheme === "light" ? "light" : "dark";
 
 const initialTheme = buildDefaultTheme(
   partner.primaryColorHsl,

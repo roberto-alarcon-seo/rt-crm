@@ -25,11 +25,15 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 const STORAGE_KEY = "brokia-theme";
 
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "partner";
+  if (typeof window === "undefined") return "dark";
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (raw === "dark" || raw === "light" || raw === "partner") return raw;
-  // No stored preference or legacy value → use partner branding
-  return "partner";
+  // No stored preference or legacy value → default to dark. ("partner" mode
+  // briefly applies the .light CSS class while the branded dark colors are
+  // still being computed, which flashed near-white borders/inputs on first
+  // paint. No UI lets users actually pick "partner" — it was a fragile
+  // implicit-only default, so just default new visitors to dark instead.)
+  return "dark";
 }
 
 function setHtmlClass(cls: "dark" | "light") {

@@ -283,6 +283,33 @@ export const THEME_PRESETS: Record<string, { label: string; description: string;
       theme_preset: "brokia_light",
     },
   },
+  rt_dark: {
+    label: "RT Oscuro",
+    description: "Oscuro con acento índigo",
+    theme: {
+      app_bg: "0 0% 6%",
+      card_bg: "0 0% 10%",
+      sidebar_bg: "0 0% 8%",
+      sidebar_text: "220 9% 70%",
+      sidebar_style: "solid",
+      primary_color: "239 84% 67%",
+      theme_preset: "rt_dark",
+    },
+  },
+  rt_light: {
+    label: "RT Claro",
+    description: "Fondo claro, sidebar negro, acento índigo",
+    theme: {
+      app_bg: "240 20% 97%",
+      card_bg: "0 0% 100%",
+      sidebar_bg: "0 0% 8%",
+      sidebar_text: "240 5% 65%",
+      sidebar_style: "solid",
+      primary_color: "239 84% 67%",
+      mode: "light",
+      theme_preset: "rt_light",
+    },
+  },
 };
 
 /** App background presets for the dropdown selector. */

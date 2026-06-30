@@ -6,10 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * /auth/sso?token=<JWT>&redirect=<optional path>
  *
- * This page acts as a loading screen. It forwards the token to the
- * `auth-sso` Edge Function, which validates the JWT (issued by the Core
- * system) and 302-redirects to a Supabase magic link that establishes the
- * session. If the user already has an active session, we skip the round-trip.
+ * Internal-only callback used by the admin "Acceder como tenant" (impersonation)
+ * flow. It forwards the token to the `auth-sso` Edge Function, which validates
+ * the JWT (issued by `admin-impersonate-sso`) and 302-redirects to a Supabase
+ * magic link that establishes the session. If the user already has an active
+ * session, we skip the round-trip.
  */
 const SsoCallback = () => {
   const [params] = useSearchParams();
@@ -25,7 +26,7 @@ const SsoCallback = () => {
     if (startedRef.current) return;
 
     if (!token) {
-      navigate("/welcome?error=sso_denied&reason=missing_token", { replace: true });
+      navigate("/login?error=sso_denied&reason=missing_token", { replace: true });
       return;
     }
 
@@ -66,7 +67,7 @@ const SsoCallback = () => {
         window.location.replace(ssoUrl.toString());
       } catch (err) {
         console.error("SsoCallback failed", err);
-        navigate("/welcome?error=sso_denied&reason=client_error", { replace: true });
+        navigate("/login?error=sso_denied&reason=client_error", { replace: true });
       }
     })();
   }, [token, redirect, mode, navigate]);

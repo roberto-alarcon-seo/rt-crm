@@ -35,10 +35,7 @@ import {
   Palette,
   Mail,
   LogIn,
-  Link2,
-  Shuffle,
 } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import {
   usePartner,
@@ -89,7 +86,6 @@ export default function PartnerDetail() {
   const [dashboardUrl, setDashboardUrl] = useState("");
   const [nonSsoUrl, setNonSsoUrl] = useState("");
   const [logoutUrl, setLogoutUrl] = useState("");
-  const [authMode, setAuthMode] = useState<'sso' | 'direct' | 'hybrid'>('sso');
   const [externalSync, setExternalSync] = useState(false);
   const [lowThreshold, setLowThreshold] = useState<number>(1000);
 
@@ -111,7 +107,6 @@ export default function PartnerDetail() {
     setDashboardUrl(partner.dashboard_url ?? "");
     setNonSsoUrl(partner.non_sso_redirect_url ?? "");
     setLogoutUrl(partner.logout_redirect_url ?? "");
-    setAuthMode((partner.auth_mode as 'sso' | 'direct' | 'hybrid') ?? 'sso');
     setExternalSync(!!partner.external_sync_enabled);
   }, [partner]);
 
@@ -168,7 +163,6 @@ export default function PartnerDetail() {
           dashboard_url: dashboardUrl.trim(),
           non_sso_redirect_url: nonSsoUrl.trim(),
           logout_redirect_url: logoutUrl.trim(),
-          auth_mode: authMode,
         },
       });
       toast.success("Identidad actualizada");
@@ -432,51 +426,15 @@ export default function PartnerDetail() {
                 {/* Auth mode */}
                 <div className="space-y-3 pt-2">
                   <Label>Modo de autenticación de usuarios</Label>
-                  <RadioGroup
-                    value={authMode}
-                    onValueChange={(v) => setAuthMode(v as 'sso' | 'direct' | 'hybrid')}
-                    className="grid md:grid-cols-3 gap-3"
-                  >
-                    {([
-                      {
-                        value: 'sso',
-                        icon: Link2,
-                        title: 'SSO',
-                        description: 'Usuarios entran desde una plataforma externa vía token. Sin login propio.',
-                      },
-                      {
-                        value: 'direct',
-                        icon: LogIn,
-                        title: 'Directo',
-                        description: 'Login con email y contraseña en la página /login de este CRM.',
-                      },
-                      {
-                        value: 'hybrid',
-                        icon: Shuffle,
-                        title: 'Híbrido',
-                        description: 'Ambos métodos disponibles: SSO y login directo.',
-                      },
-                    ] as const).map(({ value, icon: Icon, title, description }) => (
-                      <label
-                        key={value}
-                        htmlFor={`auth-mode-${value}`}
-                        className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                          authMode === value
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-muted-foreground/40'
-                        }`}
-                      >
-                        <RadioGroupItem value={value} id={`auth-mode-${value}`} className="mt-0.5 shrink-0" />
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-sm">{title}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </RadioGroup>
+                  <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-primary bg-primary/5 max-w-sm">
+                    <LogIn className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div className="space-y-1">
+                      <span className="font-medium text-sm">Directo</span>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Los usuarios inician sesión con email y contraseña en la página /login de este CRM.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex justify-end">
