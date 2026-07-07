@@ -26,7 +26,11 @@ dev-dist
 
 # Environment secrets — nunca commitear keys ni passwords
 .env
+.env.local
 .env.production
+.env.production.local
+.env.development.local
+.env.ops.local
 .env.secret
 supabase/.env
 

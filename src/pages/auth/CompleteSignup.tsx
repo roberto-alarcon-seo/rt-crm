@@ -260,7 +260,8 @@ const CompleteSignup = () => {
             Activa tu cuenta
           </h1>
           <p className="text-muted-foreground text-sm">
-            Crea una contraseña para acceder a {partner.name}.
+            Es tu primer ingreso. Define la contraseña con la que iniciarás sesión
+            de ahora en adelante en {partner.name}.
           </p>
           {userEmail && (
             <p className="text-sm text-primary mt-2">{userEmail}</p>
@@ -269,10 +270,10 @@ const CompleteSignup = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Password */}
+          {/* Nueva contraseña */}
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium text-foreground">
-              Contraseña
+              Nueva contraseña
             </label>
             <div className="relative">
               <Input
@@ -295,29 +296,10 @@ const CompleteSignup = () => {
             </div>
           </div>
 
-          {/* Password requirements */}
-          <div className="space-y-2">
-            {passwordRequirements.map((req, index) => (
-              <div 
-                key={index}
-                className={`flex items-center gap-2 text-xs ${
-                  req.test(password) ? 'text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                {req.test(password) ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <X className="h-3 w-3" />
-                )}
-                {req.label}
-              </div>
-            ))}
-          </div>
-
-          {/* Confirm Password */}
+          {/* Confirmar contraseña */}
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
-              Confirmar contraseña
+              Confirmar nueva contraseña
             </label>
             <div className="relative">
               <Input
@@ -341,6 +323,28 @@ const CompleteSignup = () => {
             {confirmPassword && !doPasswordsMatch && (
               <p className="text-xs text-destructive">Las contraseñas no coinciden</p>
             )}
+          </div>
+
+          {/* Requisitos de la contraseña */}
+          <div className="space-y-2 rounded-lg border border-border bg-secondary/40 p-3">
+            <p className="text-xs font-medium text-muted-foreground">
+              La contraseña debe tener:
+            </p>
+            {passwordRequirements.map((req, index) => (
+              <div
+                key={index}
+                className={`flex items-center gap-2 text-xs ${
+                  req.test(password) ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                {req.test(password) ? (
+                  <Check className="h-3 w-3" />
+                ) : (
+                  <X className="h-3 w-3" />
+                )}
+                {req.label}
+              </div>
+            ))}
           </div>
 
           {error && (
