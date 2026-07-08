@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useEffectiveTenantId } from "@/hooks/useEffectiveTenantId";
 import { toast } from "sonner";
 
 export interface Account {
@@ -38,7 +38,7 @@ export interface AccountFormData {
 }
 
 export function useAccounts() {
-  const { effectiveTenantId } = useAuth();
+  const effectiveTenantId = useEffectiveTenantId();
 
   const { data: accounts = [], isLoading, error } = useQuery<Account[]>({
     queryKey: ["accounts", effectiveTenantId],
@@ -65,7 +65,7 @@ export function useAccounts() {
 }
 
 export function useAccount(id?: string) {
-  const { effectiveTenantId } = useAuth();
+  const effectiveTenantId = useEffectiveTenantId();
 
   const { data: account, isLoading: accountLoading } = useQuery<Account | null>({
     queryKey: ["account", id, effectiveTenantId],
@@ -110,7 +110,7 @@ export function useAccount(id?: string) {
 }
 
 export function useCreateAccount() {
-  const { effectiveTenantId } = useAuth();
+  const effectiveTenantId = useEffectiveTenantId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -135,7 +135,7 @@ export function useCreateAccount() {
 }
 
 export function useUpdateAccount() {
-  const { effectiveTenantId } = useAuth();
+  const effectiveTenantId = useEffectiveTenantId();
   const queryClient = useQueryClient();
 
   return useMutation({

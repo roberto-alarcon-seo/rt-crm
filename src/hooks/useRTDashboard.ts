@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useEffectiveTenantId } from "@/hooks/useEffectiveTenantId";
 import {
   subDays,
   startOfDay,
@@ -66,7 +66,7 @@ export interface RTDashboardData {
 }
 
 export function useRTDashboard(dateRange?: DateRange) {
-  const { effectiveTenantId } = useAuth();
+  const effectiveTenantId = useEffectiveTenantId();
 
   const from = dateRange?.from ? startOfDay(dateRange.from) : startOfDay(subDays(new Date(), 30));
   const to = dateRange?.to ? endOfDay(dateRange.to) : endOfDay(new Date());
