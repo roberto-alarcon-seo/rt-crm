@@ -4,7 +4,7 @@ import {
   Loader2, Users,
   Calendar, TrendingUp, AlertTriangle,
   Filter, Search, RefreshCw, X, ChevronDown,
-  Tag, Thermometer,
+  Tag, Thermometer, Handshake,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,6 +92,7 @@ interface ContactCardProps {
 function ContactCard({ contact, stages, onMoveToStage, onClick, onConvert }: ContactCardProps) {
   const tempBadge = getTemperatureBadge(contact.lead_temperature);
   const isUnassigned = !contact.assigned_agent_id;
+  const hasBlockReason = contact.operational_status === 'DND';
   
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();

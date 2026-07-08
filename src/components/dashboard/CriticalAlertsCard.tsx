@@ -74,7 +74,7 @@ export function CriticalAlertsCard({
     allAlerts.push({
       id: 'stalled',
       icon: <Users className="h-4 w-4 text-muted-foreground" />,
-      label: `${leadsWithoutProperty} Oportunidades estancadas`,
+      label: `${stalledOpportunities} Oportunidades estancadas`,
       severity: 'warning' as const,
       action: () => navigate('/pipeline'),
     });
