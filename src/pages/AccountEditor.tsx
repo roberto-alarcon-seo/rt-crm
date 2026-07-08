@@ -23,7 +23,9 @@ const ACCOUNT_TYPES = [
 
 const INDUSTRIES = [
   { value: "tecnologia",      label: "Tecnología" },
+  { value: "telecomunicaciones", label: "Telecomunicaciones" },
   { value: "retail",          label: "Retail / Comercio" },
+  { value: "consumo_masivo",  label: "Consumo Masivo" },
   { value: "manufactura",     label: "Manufactura" },
   { value: "servicios",       label: "Servicios profesionales" },
   { value: "salud",           label: "Salud" },

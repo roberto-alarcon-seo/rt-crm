@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Save, ToggleLeft, ToggleRight, Tag, BookOpen, MessageSquare, Info, Link2, FileText, Upload, X } from 'lucide-react';
+import { ArrowLeft, Save, ToggleLeft, ToggleRight, Tag, BookOpen, MessageSquare, Info, Link2, FileText, Upload, X, ChevronsUpDown, Check, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveTenantId } from '@/hooks/useEffectiveTenantId';
 import { toast } from 'sonner';
@@ -57,6 +62,26 @@ export default function KnowledgeBaseEditor() {
     is_active: true,
   });
   const [tagInput, setTagInput] = useState('');
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  const [collectionSearch, setCollectionSearch] = useState('');
+
+  // Todas las colecciones: las de la tabla kb_collections + las que solo existen
+  // como valor `collection` en entradas (igual que la lista de la base de conocimiento).
+  const allCollectionNames = useMemo(() => {
+    const names = [
+      ...collections.map(c => c.name),
+      ...entries.map(e => e.collection || 'general'),
+      'general',
+    ];
+    return [...new Set(names.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  }, [collections, entries]);
+
+  const collectionQuery = collectionSearch.trim();
+  const filteredCollections = collectionQuery
+    ? allCollectionNames.filter(n => n.toLowerCase().includes(collectionQuery.toLowerCase()))
+    : allCollectionNames;
+  const showCreateCollection =
+    !!collectionQuery && !allCollectionNames.some(n => n.toLowerCase() === collectionQuery.toLowerCase());
 
   useEffect(() => {
     if (isEditing && entries.length > 0) {
@@ -80,6 +105,14 @@ export default function KnowledgeBaseEditor() {
 
   function patch<K extends keyof typeof formData>(key: K, val: typeof formData[K]) {
     setFormData(prev => ({ ...prev, [key]: val }));
+  }
+
+  // Cambio de tipo iniciado por el usuario: reinicia el contenido para que no
+  // se arrastre texto de un tipo a otro (no se usa en la carga inicial).
+  function handleTypeChange(value: KBEntryType) {
+    if (value === entryType) return;
+    setEntryType(value);
+    setFormData(prev => ({ ...prev, answer: '' }));
   }
 
   function handleAddTag() {
@@ -184,7 +217,7 @@ export default function KnowledgeBaseEditor() {
             <button
               key={value}
               type="button"
-              onClick={() => setEntryType(value)}
+              onClick={() => handleTypeChange(value)}
               className={`text-left p-3 rounded-xl border-2 transition-all ${active ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
             >
               <Icon className={`h-5 w-5 mb-1.5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
@@ -204,17 +237,71 @@ export default function KnowledgeBaseEditor() {
               {/* Collection */}
               <div className="space-y-1.5">
                 <Label>Colección</Label>
-                <Input
-                  value={formData.collection}
-                  onChange={(e) => patch('collection', e.target.value)}
-                  placeholder="ej: Nexus, Precios, Legal"
-                  list="collections-list"
-                />
-                <datalist id="collections-list">
-                  {collections.map(c => <option key={c.id} value={c.name} />)}
-                  <option value="general" />
-                </datalist>
-                <p className="text-xs text-muted-foreground">Escribe el nombre de la colección o elige una existente</p>
+                <Popover open={collectionOpen} onOpenChange={setCollectionOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={collectionOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      <span className={cn("truncate", !formData.collection && "text-muted-foreground")}>
+                        {formData.collection || 'Selecciona o crea una colección'}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Buscar o crear colección…"
+                        value={collectionSearch}
+                        onValueChange={setCollectionSearch}
+                      />
+                      <CommandList>
+                        {filteredCollections.length === 0 && !showCreateCollection && (
+                          <CommandEmpty>Sin colecciones</CommandEmpty>
+                        )}
+                        <CommandGroup>
+                          {filteredCollections.map(name => (
+                            <CommandItem
+                              key={name}
+                              value={name}
+                              onSelect={() => {
+                                patch('collection', name);
+                                setCollectionSearch('');
+                                setCollectionOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.collection === name ? "opacity-100" : "opacity-0",
+                                )}
+                              />
+                              {name}
+                            </CommandItem>
+                          ))}
+                          {showCreateCollection && (
+                            <CommandItem
+                              value={`__create__${collectionQuery}`}
+                              onSelect={() => {
+                                patch('collection', collectionQuery);
+                                setCollectionSearch('');
+                                setCollectionOpen(false);
+                              }}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Crear «{collectionQuery}»
+                            </CommandItem>
+                          )}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">Elige una colección existente o escribe para crear una nueva</p>
               </div>
 
               {/* Status */}
