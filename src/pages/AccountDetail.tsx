@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft, Building2, Globe, Users, TrendingUp, Phone, Mail,
-  Edit, Plus, Loader2, Handshake, Link, MapPin, Briefcase,
+  Edit, Plus, Loader2, Handshake, Link, MapPin, Briefcase, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAccount } from "@/hooks/useAccounts";
+import { useAuth } from "@/contexts/AuthContext";
+import { DeleteAccountDialog } from "@/components/accounts/DeleteAccountDialog";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -36,7 +38,11 @@ export default function AccountDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { account, contacts, isLoading } = useAccount(id);
+  const { hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const canManage = hasRole(["administrador", "manager"]);
 
   if (isLoading) {
     return (
@@ -117,10 +123,23 @@ export default function AccountDetail() {
               )}
             </div>
           </div>
-          <Button size="sm" variant="outline" onClick={() => navigate(`/accounts/${id}/edit`)}>
-            <Edit className="w-4 h-4 mr-2" />
-            Editar
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={() => navigate(`/accounts/${id}/edit`)}>
+              <Edit className="w-4 h-4 mr-2" />
+              Editar
+            </Button>
+            {canManage && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Eliminar
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* GCP AE info */}
@@ -282,6 +301,16 @@ export default function AccountDetail() {
           </div>
         </Tabs>
       </div>
+
+      {account && (
+        <DeleteAccountDialog
+          accountId={account.id}
+          accountName={account.name}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onDeleted={() => navigate("/accounts")}
+        />
+      )}
     </div>
   );
 }

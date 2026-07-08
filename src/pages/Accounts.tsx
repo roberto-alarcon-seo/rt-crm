@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Building2, Plus, Search, Filter, Globe, Users,
-  TrendingUp, Handshake, ChevronRight, Loader2,
+  TrendingUp, Handshake, ChevronRight, Loader2, MoreVertical, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useAuth } from "@/contexts/AuthContext";
+import { DeleteAccountDialog } from "@/components/accounts/DeleteAccountDialog";
 import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -39,10 +44,13 @@ function getInitials(name: string) {
 export default function Accounts() {
   const navigate = useNavigate();
   const { accounts, isLoading } = useAccounts();
+  const { hasRole } = useAuth();
+  const canManage = hasRole(["administrador", "manager"]);
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [countryFilter, setCountryFilter] = useState<string>("all");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const filtered = accounts.filter(a => {
     const matchSearch = !search ||
@@ -181,7 +189,34 @@ export default function Accounts() {
                           <p className="text-xs text-muted-foreground truncate">{account.industry}</p>
                         )}
                       </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100" />
+                      {canManage ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0 text-muted-foreground"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={() => navigate(`/accounts/${account.id}/edit`)}>
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setDeleteTarget({ id: account.id, name: account.name })}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100" />
+                      )}
                     </div>
 
                     <div className="space-y-1.5">
@@ -213,6 +248,15 @@ export default function Accounts() {
           </div>
         )}
       </div>
+
+      {deleteTarget && (
+        <DeleteAccountDialog
+          accountId={deleteTarget.id}
+          accountName={deleteTarget.name}
+          open={!!deleteTarget}
+          onOpenChange={open => { if (!open) setDeleteTarget(null); }}
+        />
+      )}
     </div>
   );
 }

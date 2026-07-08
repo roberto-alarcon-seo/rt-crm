@@ -159,3 +159,51 @@ export function useUpdateAccount() {
     },
   });
 }
+
+/** Count of contacts linked to an account — used to warn before deleting. */
+export function useAccountContactCount(accountId?: string, enabled = true) {
+  const effectiveTenantId = useEffectiveTenantId();
+
+  const { data: count = 0, isLoading } = useQuery<number>({
+    queryKey: ["account-contact-count", accountId, effectiveTenantId],
+    enabled: !!accountId && !!effectiveTenantId && enabled,
+    queryFn: async () => {
+      if (!accountId || !effectiveTenantId) return 0;
+      const { count, error } = await (supabase as any)
+        .from("contacts")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", effectiveTenantId)
+        .eq("account_id", accountId);
+      if (error) return 0;
+      return count ?? 0;
+    },
+  });
+
+  return { count, isLoading };
+}
+
+/**
+ * Hard-deletes an account and everything related (contacts, opportunities,
+ * attribution, vendor registrations, relationships) via a server-side
+ * transactional function. Irreversible.
+ */
+export function useDeleteAccount() {
+  const effectiveTenantId = useEffectiveTenantId();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId: string) => {
+      const { data, error } = await (supabase as any).rpc("delete_account_cascade", {
+        p_account_id: accountId,
+      });
+      if (error) throw error;
+      return data as { deleted: boolean; deleted_contacts: number };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accounts", effectiveTenantId] });
+    },
+    onError: () => {
+      toast.error("Error al eliminar empresa");
+    },
+  });
+}
