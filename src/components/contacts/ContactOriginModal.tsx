@@ -327,7 +327,7 @@ export function ContactOriginModal({ open, onOpenChange, onCreated }: ContactOri
 
     const { data: contact, error } = await supabase
       .from('contacts')
-      .insert(payload)
+      .insert(payload as any)
       .select()
       .single();
 

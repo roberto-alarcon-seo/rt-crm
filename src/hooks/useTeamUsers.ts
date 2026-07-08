@@ -86,7 +86,7 @@ export function useTeamUsers() {
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
       const { error } = await supabase
         .from("user_roles")
-        .update({ tenant_role: role })
+        .update({ tenant_role: role } as any)
         .eq("user_id", userId);
       if (error) throw error;
     },

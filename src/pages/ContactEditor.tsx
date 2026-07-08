@@ -834,7 +834,7 @@ export default function ContactEditor() {
                       <Label>Temperatura</Label>
                       <Select
                         value={formData.lead_temperature ?? "cold"}
-                        onValueChange={v => setFormData({ ...formData, lead_temperature: v })}
+                        onValueChange={v => setFormData({ ...formData, lead_temperature: v as 'hot' | 'warm' | 'cold' })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -885,7 +885,7 @@ export default function ContactEditor() {
                     <Label>Consentimiento de comunicación</Label>
                     <Select
                       value={formData.opt_in_status ?? "unknown"}
-                      onValueChange={v => setFormData({ ...formData, opt_in_status: v })}
+                      onValueChange={v => setFormData({ ...formData, opt_in_status: v as 'unknown' | 'opt_in' | 'opt_out' })}
                     >
                       <SelectTrigger>
                         <SelectValue />

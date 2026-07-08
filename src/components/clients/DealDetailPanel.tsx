@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   ExternalLink, Building2, Phone, Mail, FileText, Link, Pencil,
   Check, Activity, MessageSquare, CalendarClock, StickyNote, CheckCircle2, Lock,

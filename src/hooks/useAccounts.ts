@@ -91,7 +91,7 @@ export function useAccount(id?: string) {
     enabled: !!id && !!effectiveTenantId,
     queryFn: async () => {
       if (!id || !effectiveTenantId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("contacts")
         .select("id, name, email, phone, last_interaction_at, pipeline_stage")
         .eq("tenant_id", effectiveTenantId)

@@ -205,7 +205,7 @@ export function TenantRegionalTab({ tenantId, onUpdate }: TenantRegionalTabProps
     setSaving(true);
     const { error } = await supabase
       .from('tenants')
-      .update({ settings })
+      .update({ settings: settings as any })
       .eq('id', tenantId);
 
     if (error) {

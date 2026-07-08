@@ -6,7 +6,7 @@ import { es } from "date-fns/locale";
 
 interface ActivityItem {
   id: string;
-  type: 'ai_message' | 'new_lead' | 'followup' | 'visit' | 'conversion';
+  type: 'ai_message' | 'inbound_message' | 'outbound_message' | 'new_lead' | 'followup' | 'visit' | 'conversion';
   description: string;
   timestamp: string;
   contactName?: string;

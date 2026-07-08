@@ -480,7 +480,7 @@ export default function Contacts() {
           channel: 'whatsapp',
           status: 'open',
           phone_number: contact.phone ?? null,
-        })
+        } as any)
         .select('id')
         .single();
       if (error || !created) {

@@ -41,7 +41,7 @@ export function useAIMessages(conversationId: string | null) {
         .eq('conversation_id', conversationId!)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data ?? []) as AIMessage[];
+      return (data ?? []) as unknown as AIMessage[];
     },
     enabled: isValidId,
   });

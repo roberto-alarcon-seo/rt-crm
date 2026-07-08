@@ -61,8 +61,8 @@ export interface RTDashboardData {
   attribution: {
     byChannel: { channel: string; label: string; leads: number; opportunities: number; color: string }[];
   };
-  dailyTrends: { date: string; label: string; newLeads: number; messages: number; conversions: number }[];
-  recentActivity: { id: string; type: string; description: string; contact?: string; time: string }[];
+  dailyTrends: { date: string; label: string; newLeads: number; messages: number; conversions: number; visits: number }[];
+  recentActivity: { id: string; type: 'ai_message' | 'inbound_message' | 'outbound_message'; description: string; contact?: string; timestamp: string }[];
 }
 
 export function useRTDashboard(dateRange?: DateRange) {
@@ -91,7 +91,7 @@ export function useRTDashboard(dateRange?: DateRange) {
           .neq("operational_status", "ARCHIVED"),
         supabase
           .from("messages")
-          .select("id, direction, created_at, sent_by_ai")
+          .select("id, direction, created_at, ai_generated")
           .eq("tenant_id", effectiveTenantId)
           .gte("created_at", from.toISOString())
           .lte("created_at", to.toISOString()),
@@ -103,7 +103,7 @@ export function useRTDashboard(dateRange?: DateRange) {
           .lt("next_action_at", new Date().toISOString()),
         supabase
           .from("messages")
-          .select("id, direction, body, created_at, sent_by_ai, conversation_id")
+          .select("id, direction, body, created_at, ai_generated, conversation_id")
           .eq("tenant_id", effectiveTenantId)
           .order("created_at", { ascending: false })
           .limit(10),
@@ -181,8 +181,8 @@ export function useRTDashboard(dateRange?: DateRange) {
       // Messaging
       const sent = messages.filter(m => m.direction === 'outbound');
       const received = messages.filter(m => m.direction === 'inbound');
-      const aiResponses = sent.filter(m => m.sent_by_ai).length;
-      const humanResponses = sent.filter(m => !m.sent_by_ai).length;
+      const aiResponses = sent.filter(m => m.ai_generated).length;
+      const humanResponses = sent.filter(m => !m.ai_generated).length;
       const responseRate = received.length > 0 ? Math.round((sent.length / received.length) * 100) : 0;
 
       // Attribution by source
@@ -234,15 +234,16 @@ export function useRTDashboard(dateRange?: DateRange) {
           newLeads: dayLeads,
           messages: dayMessages,
           conversions: 0,
+          visits: 0,
         };
       });
 
       // Recent activity
       const recentActivity = recentMsgs.map(m => ({
         id: m.id,
-        type: m.sent_by_ai ? 'ai_message' : m.direction === 'inbound' ? 'inbound_message' : 'outbound_message',
+        type: (m.ai_generated ? 'ai_message' : m.direction === 'inbound' ? 'inbound_message' : 'outbound_message') as 'ai_message' | 'inbound_message' | 'outbound_message',
         description: m.body ? (m.body.length > 60 ? m.body.slice(0, 60) + '…' : m.body) : 'Mensaje',
-        time: m.created_at,
+        timestamp: m.created_at,
       }));
 
       return {
