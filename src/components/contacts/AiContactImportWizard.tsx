@@ -178,6 +178,15 @@ function composeName(first: string, last: string): string {
   return `${f} ${l}`;
 }
 
+// Clave normalizada para emparejar nombres de empresa: ignora acentos,
+// mayúsculas y espacios extra (así "Televisa Univisión" == "Televisa Univision").
+function companyKey(name: string): string {
+  return (name || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')   // acentos/diacríticos
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');                 // espacios, puntuación, etc.
+}
+
 // ── Componente ────────────────────────────────────────────────────────────────
 export function AiContactImportWizard({ open, onOpenChange, onImportComplete }: Props) {
   const tenantId = useEffectiveTenantId();
@@ -343,8 +352,8 @@ export function AiContactImportWizard({ open, onOpenChange, onImportComplete }: 
           .from('accounts')
           .select('name')
           .eq('tenant_id', tenantId);
-        const existingNames = new Set((accts || []).map((a: any) => a.name.toLowerCase().trim()));
-        newCompanyNames = companies.filter(c => !existingNames.has(c.toLowerCase().trim()));
+        const existingNames = new Set((accts || []).map((a: any) => companyKey(a.name)));
+        newCompanyNames = companies.filter(c => !existingNames.has(companyKey(c)));
       }
 
       setDecisions(decisions);
@@ -376,14 +385,14 @@ export function AiContactImportWizard({ open, onOpenChange, onImportComplete }: 
       const accountIdByName = new Map<string, string>();
       if (wanted.length) {
         const { data: accts } = await (supabase as any).from('accounts').select('id, name').eq('tenant_id', tenantId);
-        (accts || []).forEach((a: any) => accountIdByName.set(a.name.toLowerCase().trim(), a.id));
+        (accts || []).forEach((a: any) => accountIdByName.set(companyKey(a.name), a.id));
         for (const name of wanted) {
-          if (accountIdByName.has(name.toLowerCase())) continue;
+          if (accountIdByName.has(companyKey(name))) continue;
           const { data: created, error } = await (supabase as any)
             .from('accounts')
             .insert({ tenant_id: tenantId, name, account_type: 'lead', status: 'active' })
             .select('id').single();
-          if (!error && created) { accountIdByName.set(name.toLowerCase(), created.id); res.accountsCreated++; }
+          if (!error && created) { accountIdByName.set(companyKey(name), created.id); res.accountsCreated++; }
         }
       }
 
@@ -396,7 +405,7 @@ export function AiContactImportWizard({ open, onOpenChange, onImportComplete }: 
       const toProcess = decisions.filter(d => d.action !== 'skip');
       for (let i = 0; i < toProcess.length; i++) {
         const d = toProcess[i];
-        const accountId = d.company ? accountIdByName.get(d.company.toLowerCase().trim()) ?? null : null;
+        const accountId = d.company ? accountIdByName.get(companyKey(d.company)) ?? null : null;
         let ownerId: string | null = null;
         if (d.ownerName) {
           const on = d.ownerName.toLowerCase().trim();
