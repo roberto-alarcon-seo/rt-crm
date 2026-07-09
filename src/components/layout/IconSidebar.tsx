@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink } from "@/components/NavLink";
+import { APP_VERSION, APP_BUILD_DATE } from "@/version";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -284,6 +285,16 @@ export function IconSidebar() {
           })}
         </div>
       )}
+
+      {/* Version tag — se actualiza en cada commit */}
+      <div className="border-t border-sidebar-border px-2 py-1.5">
+        <p
+          className="text-[10px] text-sidebar-foreground/40 text-center truncate leading-tight"
+          title={`RT CRM v${APP_VERSION} · build ${APP_BUILD_DATE}`}
+        >
+          {collapsed ? `v${APP_VERSION}` : `v${APP_VERSION} · ${APP_BUILD_DATE}`}
+        </p>
+      </div>
     </aside>
   );
 }
