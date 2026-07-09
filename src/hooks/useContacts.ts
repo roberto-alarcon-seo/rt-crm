@@ -9,6 +9,8 @@ export interface Contact {
   id: string;
   tenant_id: string;
   name: string;
+  first_name?: string | null;
+  last_name?: string | null;
   email: string | null;
   phone: string | null;
   country: string | null;
@@ -76,6 +78,8 @@ export interface CustomFieldValue {
 
 export interface ContactFormData {
   name: string;
+  first_name?: string | null;
+  last_name?: string | null;
   email?: string;
   phone?: string;
   country?: string;
@@ -287,11 +291,13 @@ export function useContacts() {
 
     try {
       // Insert contact (no limit checks - unlimited contacts)
-      const { data: newContact, error: insertError } = await supabase
+      const { data: newContact, error: insertError } = await (supabase as any)
         .from('contacts')
         .insert({
           tenant_id: tenantId,
           name: formData.name,
+          first_name: formData.first_name || null,
+          last_name: formData.last_name || null,
           email: formData.email || null,
           phone: formData.phone || null,
           country: formData.country || null,
@@ -371,10 +377,12 @@ export function useContacts() {
 
   const updateContact = async (id: string, formData: ContactFormData, oldPipelineStage?: string): Promise<boolean> => {
     try {
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('contacts')
         .update({
           name: formData.name,
+          first_name: formData.first_name || null,
+          last_name: formData.last_name || null,
           email: formData.email || null,
           phone: formData.phone || null,
           country: formData.country || null,

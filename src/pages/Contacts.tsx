@@ -48,7 +48,7 @@ import { cn } from "@/lib/utils";
 import { useContacts, Contact } from "@/hooks/useContacts";
 import { useSegments } from "@/hooks/useSegments";
 import { useAuth } from "@/contexts/AuthContext";
-import { CsvImportWizard } from "@/components/contacts/CsvImportWizard";
+import { AiContactImportWizard } from "@/components/contacts/AiContactImportWizard";
 import { TemplateSelectorSheet } from "@/components/inbox/TemplateSelectorSheet";
 import { useSendTemplate } from "@/hooks/useSendTemplate";
 import { supabase } from "@/integrations/supabase/client";
@@ -1069,8 +1069,8 @@ export default function Contacts() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Import CSV Wizard */}
-      <CsvImportWizard
+      {/* Import Wizard (IA) */}
+      <AiContactImportWizard
         open={showImportModal}
         onOpenChange={setShowImportModal}
         onImportComplete={fetchContacts}

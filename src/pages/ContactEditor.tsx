@@ -163,6 +163,8 @@ export default function ContactEditor() {
   const [activeSection, setActiveSection] = useState("general");
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
     country: "",
@@ -234,8 +236,17 @@ export default function ContactEditor() {
         const rawStage = contact.pipeline_stage ?? "etapa_0_captacion";
         const mappedStage = LEGACY_STAGE_MAP[rawStage] ?? rawStage;
 
+        // Nombre/Apellidos: usa las columnas si el contacto ya las tiene; solo para
+        // contactos previos (sin ningún campo separado) deriva del nombre completo.
+        const hasSplitName = c.first_name != null || c.last_name != null;
+        const nameParts = (contact.name || "").trim().split(/\s+/);
+        const derivedFirst = hasSplitName ? (c.first_name ?? "") : (nameParts[0] || "");
+        const derivedLast = hasSplitName ? (c.last_name ?? "") : nameParts.slice(1).join(" ");
+
         setFormData({
           name: contact.name,
+          first_name: derivedFirst,
+          last_name: derivedLast,
           email: contact.email || "",
           phone: contact.phone || "",
           country: contact.country || "",
@@ -510,14 +521,33 @@ export default function ContactEditor() {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nombre *</Label>
-                    <Input
-                      id="name"
-                      placeholder="Nombre completo"
-                      value={formData.name}
-                      onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">Nombre *</Label>
+                      <Input
+                        id="first_name"
+                        placeholder="Nombre(s)"
+                        value={formData.first_name || ""}
+                        onChange={e => {
+                          const first = e.target.value;
+                          const full = [first, formData.last_name].filter(Boolean).join(" ").trim();
+                          setFormData({ ...formData, first_name: first, name: full });
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">Apellidos</Label>
+                      <Input
+                        id="last_name"
+                        placeholder="Apellidos"
+                        value={formData.last_name || ""}
+                        onChange={e => {
+                          const last = e.target.value;
+                          const full = [formData.first_name, last].filter(Boolean).join(" ").trim();
+                          setFormData({ ...formData, last_name: last, name: full });
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">

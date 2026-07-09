@@ -160,6 +160,34 @@ export function useUpdateAccount() {
   });
 }
 
+/** Mapa accountId → nº de contactos vinculados (para la lista de empresas). */
+export function useAccountContactCounts() {
+  const effectiveTenantId = useEffectiveTenantId();
+
+  const { data = {} } = useQuery<Record<string, number>>({
+    queryKey: ["account-contact-counts", effectiveTenantId],
+    enabled: !!effectiveTenantId,
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      if (!effectiveTenantId) return {};
+      const { data, error } = await (supabase as any)
+        .from("contacts")
+        .select("account_id")
+        .eq("tenant_id", effectiveTenantId)
+        .neq("status", "deleted")
+        .not("account_id", "is", null);
+      if (error) return {};
+      const counts: Record<string, number> = {};
+      (data || []).forEach((r: { account_id: string | null }) => {
+        if (r.account_id) counts[r.account_id] = (counts[r.account_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  return data;
+}
+
 /** Count of contacts linked to an account — used to warn before deleting. */
 export function useAccountContactCount(accountId?: string, enabled = true) {
   const effectiveTenantId = useEffectiveTenantId();

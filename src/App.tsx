@@ -245,7 +245,7 @@ const App = () => (
               <Route path="/accounts" element={<ProtectedRoute><MainLayout><Accounts /></MainLayout></ProtectedRoute>} />
               <Route path="/accounts/new" element={<ProtectedRoute><MainLayout><AccountEditor /></MainLayout></ProtectedRoute>} />
               <Route path="/accounts/:id/edit" element={<ProtectedRoute><MainLayout><AccountEditor /></MainLayout></ProtectedRoute>} />
-              <Route path="/accounts/:id" element={<ProtectedRoute><MainLayout><AccountDetail /></MainLayout></ProtectedRoute>} />
+              <Route path="/accounts/:id" element={<ProtectedRoute><MainLayout><Accounts /></MainLayout></ProtectedRoute>} />
               {/* Legacy properties routes — redirect to accounts */}
               <Route path="/properties" element={<Navigate to="/accounts" replace />} />
               <Route path="/properties/new" element={<Navigate to="/accounts" replace />} />

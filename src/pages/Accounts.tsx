@@ -1,40 +1,29 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Building2, Plus, Search, Filter, Globe, Users,
-  TrendingUp, Handshake, ChevronRight, Loader2, MoreVertical, Trash2,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Building2, Plus, Search, Users, Loader2, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { useAccounts } from "@/hooks/useAccounts";
-import { useAuth } from "@/contexts/AuthContext";
-import { DeleteAccountDialog } from "@/components/accounts/DeleteAccountDialog";
+import { useAccounts, useAccountContactCounts } from "@/hooks/useAccounts";
+import { AccountDetailPanel } from "@/components/accounts/AccountDetailPanel";
 import { cn } from "@/lib/utils";
 
 const ACCOUNT_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  lead:               { label: "Lead",        color: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
-  prospect:           { label: "Prospecto",   color: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
-  cliente:            { label: "Cliente",     color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-  partner:            { label: "Partner",     color: "bg-violet-500/15 text-violet-400 border-violet-500/30" },
-  partner_y_cliente:  { label: "Cliente & Partner", color: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+  lead: { label: "Lead", color: "bg-slate-500/15 text-slate-400 border-slate-500/30" },
+  prospect: { label: "Prospecto", color: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
+  cliente: { label: "Cliente", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  partner: { label: "Partner", color: "bg-violet-500/15 text-violet-400 border-violet-500/30" },
+  partner_y_cliente: { label: "Cliente & Partner", color: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
 };
 
 const COUNTRY_LABELS: Record<string, string> = {
-  MX: "🇲🇽 México",
-  CO: "🇨🇴 Colombia",
-  CL: "🇨🇱 Chile",
-  AR: "🇦🇷 Argentina",
-  PE: "🇵🇪 Perú",
-  US: "🇺🇸 Estados Unidos",
+  MX: "🇲🇽 México", CO: "🇨🇴 Colombia", CL: "🇨🇱 Chile",
+  AR: "🇦🇷 Argentina", PE: "🇵🇪 Perú", US: "🇺🇸 Estados Unidos",
 };
 
 function getInitials(name: string) {
@@ -43,220 +32,181 @@ function getInitials(name: string) {
 
 export default function Accounts() {
   const navigate = useNavigate();
+  const { id: selectedId } = useParams<{ id: string }>();
   const { accounts, isLoading } = useAccounts();
-  const { hasRole } = useAuth();
-  const canManage = hasRole(["administrador", "manager"]);
+  const contactCounts = useAccountContactCounts();
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [countryFilter, setCountryFilter] = useState<string>("all");
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [sort, setSort] = useState<"name" | "contacts">("name");
 
-  const filtered = accounts.filter(a => {
-    const matchSearch = !search ||
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.industry?.toLowerCase().includes(search.toLowerCase()) ||
-      a.city?.toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === "all" || a.account_type === typeFilter;
-    const matchCountry = countryFilter === "all" || a.country === countryFilter;
-    return matchSearch && matchType && matchCountry;
-  });
+  const filtered = useMemo(() => {
+    const list = accounts.filter(a => {
+      const matchSearch = !search ||
+        a.name.toLowerCase().includes(search.toLowerCase()) ||
+        a.industry?.toLowerCase().includes(search.toLowerCase()) ||
+        a.city?.toLowerCase().includes(search.toLowerCase());
+      const matchType = typeFilter === "all" || a.account_type === typeFilter;
+      const matchCountry = countryFilter === "all" || a.country === countryFilter;
+      return matchSearch && matchType && matchCountry;
+    });
+    return list.sort((a, b) =>
+      sort === "contacts"
+        ? (contactCounts[b.id] || 0) - (contactCounts[a.id] || 0) || a.name.localeCompare(b.name)
+        : a.name.localeCompare(b.name),
+    );
+  }, [accounts, search, typeFilter, countryFilter, sort, contactCounts]);
 
-  const counts = {
+  const counts = useMemo(() => ({
     total: accounts.length,
-    clientes: accounts.filter(a => a.account_type === 'cliente' || a.account_type === 'partner_y_cliente').length,
-    partners: accounts.filter(a => a.account_type === 'partner' || a.account_type === 'partner_y_cliente').length,
-    pipeline: accounts.filter(a => ['lead', 'prospect'].includes(a.account_type)).length,
-  };
+    withContacts: accounts.filter(a => (contactCounts[a.id] || 0) > 0).length,
+    clientes: accounts.filter(a => a.account_type === "cliente" || a.account_type === "partner_y_cliente").length,
+    partners: accounts.filter(a => a.account_type === "partner" || a.account_type === "partner_y_cliente").length,
+  }), [accounts, contactCounts]);
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header */}
-      <div className="shrink-0 px-6 py-4 border-b border-border bg-card">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-primary" />
-              Empresas
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Clientes, partners y prospectos de Random Truffle
+      {/* Top bar */}
+      <div className="shrink-0 px-6 py-3 border-b border-border bg-card flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2 min-w-0">
+          <Building2 className="w-5 h-5 text-primary shrink-0" />
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-foreground leading-tight">Empresas</h1>
+            <p className="text-xs text-muted-foreground truncate">
+              {counts.total} empresas · {counts.withContacts} con contactos · {counts.clientes} clientes · {counts.partners} partners
             </p>
           </div>
-          <Button onClick={() => navigate("/accounts/new")} size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva empresa
-          </Button>
         </div>
-
-        {/* Summary stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          {[
-            { label: "Total", value: counts.total, icon: Building2 },
-            { label: "En Pipeline", value: counts.pipeline, icon: TrendingUp },
-            { label: "Clientes", value: counts.clientes, icon: Users },
-            { label: "Partners", value: counts.partners, icon: Handshake },
-          ].map(stat => (
-            <div key={stat.label} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/40 border border-border/50">
-              <stat.icon className="w-4 h-4 text-primary shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-                <p className="text-lg font-semibold leading-tight">{stat.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar empresa, industria, ciudad..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los tipos</SelectItem>
-              <SelectItem value="lead">Lead</SelectItem>
-              <SelectItem value="prospect">Prospecto</SelectItem>
-              <SelectItem value="cliente">Cliente</SelectItem>
-              <SelectItem value="partner">Partner</SelectItem>
-              <SelectItem value="partner_y_cliente">Cliente & Partner</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={countryFilter} onValueChange={setCountryFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="País" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los países</SelectItem>
-              {Object.entries(COUNTRY_LABELS).map(([code, label]) => (
-                <SelectItem key={code} value={code}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Button onClick={() => navigate("/accounts/new")} size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva empresa
+        </Button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-40">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      {/* Master-detail */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* LEFT: list */}
+        <div className={cn(
+          "w-full lg:w-80 xl:w-96 shrink-0 lg:border-r border-border flex flex-col bg-card/40",
+          selectedId && "hidden lg:flex",
+        )}>
+          {/* Filters */}
+          <div className="p-3 border-b border-border space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar empresa, industria, ciudad…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  <SelectItem value="lead">Lead</SelectItem>
+                  <SelectItem value="prospect">Prospecto</SelectItem>
+                  <SelectItem value="cliente">Cliente</SelectItem>
+                  <SelectItem value="partner">Partner</SelectItem>
+                  <SelectItem value="partner_y_cliente">Cliente & Partner</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={countryFilter} onValueChange={setCountryFilter}>
+                <SelectTrigger className="h-8 text-xs flex-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los países</SelectItem>
+                  {Object.entries(COUNTRY_LABELS).map(([code, label]) => (
+                    <SelectItem key={code} value={code}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sort} onValueChange={(v) => setSort(v as "name" | "contacts")}>
+                <SelectTrigger className="h-8 text-xs w-9 px-0 justify-center" aria-label="Ordenar">
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="name">Nombre (A-Z)</SelectItem>
+                  <SelectItem value="contacts">Más contactos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 gap-3 text-muted-foreground">
-            <Building2 className="w-10 h-10 opacity-30" />
-            <p className="text-sm">
-              {accounts.length === 0
-                ? "Aún no hay empresas registradas"
-                : "No hay empresas que coincidan con los filtros"}
-            </p>
-            {accounts.length === 0 && (
-              <Button size="sm" onClick={() => navigate("/accounts/new")}>
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar primera empresa
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filtered.map(account => {
-              const typeConfig = ACCOUNT_TYPE_LABELS[account.account_type] ?? ACCOUNT_TYPE_LABELS.lead;
-              return (
-                <Card
-                  key={account.id}
-                  className="cursor-pointer hover:shadow-md hover:border-primary/30 transition-all"
-                  onClick={() => navigate(`/accounts/${account.id}`)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <Avatar className="h-10 w-10 shrink-0">
-                        <AvatarFallback className="bg-primary/15 text-primary text-sm font-semibold">
-                          {getInitials(account.name)}
+
+          {/* List */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground px-4 text-center">
+              <Building2 className="w-8 h-8 opacity-30" />
+              <p className="text-sm">
+                {accounts.length === 0 ? "Aún no hay empresas" : "Sin coincidencias"}
+              </p>
+            </div>
+          ) : (
+            <ScrollArea className="flex-1">
+              <div className="py-1">
+                {filtered.map(a => {
+                  const type = ACCOUNT_TYPE_LABELS[a.account_type] ?? ACCOUNT_TYPE_LABELS.lead;
+                  const n = contactCounts[a.id] || 0;
+                  const active = selectedId === a.id;
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => navigate(`/accounts/${a.id}`)}
+                      className={cn(
+                        "w-full text-left flex items-center gap-3 px-3 py-2.5 border-l-2 transition-colors",
+                        active
+                          ? "bg-primary/10 border-primary"
+                          : "border-transparent hover:bg-muted/50",
+                      )}
+                    >
+                      <Avatar className="h-9 w-9 shrink-0">
+                        <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+                          {getInitials(a.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm truncate">{account.name}</h3>
-                        {account.industry && (
-                          <p className="text-xs text-muted-foreground truncate">{account.industry}</p>
-                        )}
+                        <p className={cn("text-sm truncate", active ? "font-semibold" : "font-medium")}>
+                          {a.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-4", type.color)}>
+                            {type.label}
+                          </Badge>
+                          {a.industry && (
+                            <span className="text-[11px] text-muted-foreground truncate">{a.industry}</span>
+                          )}
+                        </div>
                       </div>
-                      {canManage ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 shrink-0 text-muted-foreground"
-                              onClick={e => e.stopPropagation()}
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
-                            <DropdownMenuItem onClick={() => navigate(`/accounts/${account.id}/edit`)}>
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setDeleteTarget({ id: account.id, name: account.name })}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100" />
-                      )}
-                    </div>
+                      <div className={cn(
+                        "flex items-center gap-1 text-xs shrink-0",
+                        n > 0 ? "text-foreground" : "text-muted-foreground/50",
+                      )}>
+                        <Users className="w-3.5 h-3.5" />
+                        {n}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
 
-                    <div className="space-y-1.5">
-                      <Badge variant="outline" className={cn("text-[10px] px-1.5", typeConfig.color)}>
-                        {typeConfig.label}
-                      </Badge>
-
-                      {(account.country || account.city) && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Globe className="w-3 h-3" />
-                          <span>
-                            {[account.city, account.country ? COUNTRY_LABELS[account.country]?.split(" ")[1] : account.country]
-                              .filter(Boolean).join(", ")}
-                          </span>
-                        </div>
-                      )}
-
-                      {account.gcp_ae_name && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="w-3 h-3" />
-                          <span>AE: {account.gcp_ae_name}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        {/* RIGHT: detail panel */}
+        <div className={cn("flex-1 min-w-0", !selectedId && "hidden lg:block")}>
+          <AccountDetailPanel
+            accountId={selectedId}
+            onBack={() => navigate("/accounts")}
+            onDeleted={() => navigate("/accounts")}
+          />
+        </div>
       </div>
-
-      {deleteTarget && (
-        <DeleteAccountDialog
-          accountId={deleteTarget.id}
-          accountName={deleteTarget.name}
-          open={!!deleteTarget}
-          onOpenChange={open => { if (!open) setDeleteTarget(null); }}
-        />
-      )}
     </div>
   );
 }
