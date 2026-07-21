@@ -286,14 +286,16 @@ export function IconSidebar() {
         </div>
       )}
 
-      {/* Version tag — se actualiza en cada commit */}
+      {/* Version tag — se actualiza en cada commit. Lleva a las novedades. */}
       <div className="border-t border-sidebar-border px-2 py-1.5">
-        <p
-          className="text-[10px] text-sidebar-foreground/40 text-center truncate leading-tight"
-          title={`RT CRM v${APP_VERSION} · build ${APP_BUILD_DATE}`}
+        <NavLink
+          to="/changelog"
+          className="block rounded px-1 py-0.5 text-[10px] text-sidebar-foreground/40 text-center truncate leading-tight transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground/80"
+          activeClassName="bg-sidebar-accent text-sidebar-foreground/80"
+          title={`RT CRM v${APP_VERSION} · build ${APP_BUILD_DATE} — ver novedades`}
         >
           {collapsed ? `v${APP_VERSION}` : `v${APP_VERSION} · ${APP_BUILD_DATE}`}
-        </p>
+        </NavLink>
       </div>
     </aside>
   );

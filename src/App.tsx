@@ -33,6 +33,7 @@ import Events from "./pages/Events";
 const AutomationRuns = lazy(() => import("./pages/AutomationRuns"));
 import Pipeline from "./pages/Pipeline";
 const Accounts = lazy(() => import("./pages/Accounts"));
+const Changelog = lazy(() => import("./pages/Changelog"));
 const AccountDetail = lazy(() => import("./pages/AccountDetail"));
 const AccountEditor = lazy(() => import("./pages/AccountEditor"));
 import { toast } from "sonner";
@@ -242,6 +243,7 @@ const App = () => (
               <Route path="/settings/security" element={<Navigate to="/settings/whatsapp" replace />} />
               <Route path="/settings/api" element={<Navigate to="/settings/developer" replace />} />
               {/* Accounts (Empresas) routes */}
+              <Route path="/changelog" element={<ProtectedRoute><MainLayout><Changelog /></MainLayout></ProtectedRoute>} />
               <Route path="/accounts" element={<ProtectedRoute><MainLayout><Accounts /></MainLayout></ProtectedRoute>} />
               <Route path="/accounts/new" element={<ProtectedRoute><MainLayout><AccountEditor /></MainLayout></ProtectedRoute>} />
               <Route path="/accounts/:id/edit" element={<ProtectedRoute><MainLayout><AccountEditor /></MainLayout></ProtectedRoute>} />
