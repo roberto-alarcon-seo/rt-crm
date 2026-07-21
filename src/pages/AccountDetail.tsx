@@ -11,8 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAccount } from "@/hooks/useAccounts";
+import { useLinkedExecutives } from "@/hooks/useAccountExecutives";
+import { useAccountDocuments } from "@/hooks/useAccountDocuments";
 import { useAuth } from "@/contexts/AuthContext";
 import { DeleteAccountDialog } from "@/components/accounts/DeleteAccountDialog";
+import { AccountDocumentsSection } from "@/components/accounts/AccountDocumentsSection";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -38,6 +41,8 @@ export default function AccountDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { account, contacts, isLoading } = useAccount(id);
+  const { linked: executives } = useLinkedExecutives(id);
+  const { documents } = useAccountDocuments(id);
   const { hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -142,11 +147,53 @@ export default function AccountDetail() {
           </div>
         </div>
 
-        {/* GCP AE info */}
-        {account.gcp_ae_name && (
+        {/* Account Executives — del catálogo, con las columnas legacy como respaldo */}
+        {executives.length > 0 ? (
+          <div className="mt-3 px-3 py-2 rounded-lg bg-blue-500/5 border border-blue-500/20 text-sm">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Globe className="w-4 h-4 text-blue-400 shrink-0" />
+              <span className="text-muted-foreground">
+                {executives.length === 1
+                  ? "Account Executive:"
+                  : `Account Executives (${executives.length}):`}
+              </span>
+            </div>
+            {/* Agrupados por organización: una cuenta puede tener AEs de
+                Google y de Oracle a la vez, y hay que distinguirlos */}
+            <div className="space-y-1.5 pl-6">
+              {[...executives.reduce((map, ae) => {
+                const key = ae.organization_name ?? "Sin organización";
+                if (!map.has(key)) map.set(key, []);
+                map.get(key)!.push(ae);
+                return map;
+              }, new Map<string, typeof executives>())].map(([orgName, aes]) => (
+                <div key={orgName} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 shrink-0">
+                    {orgName}
+                  </span>
+                  {aes.map(ae => (
+                    <div key={ae.id} className="flex items-center gap-1.5">
+                      <span className="font-medium">{ae.name}</span>
+                      {ae.is_primary && (
+                        <Badge variant="outline" className="h-4 text-[10px] px-1 border-blue-500/40 text-blue-400">
+                          Principal
+                        </Badge>
+                      )}
+                      {ae.email && (
+                        <a href={`mailto:${ae.email}`} className="text-blue-400 hover:underline text-xs">
+                          {ae.email}
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : account.gcp_ae_name ? (
           <div className="mt-3 px-3 py-2 rounded-lg bg-blue-500/5 border border-blue-500/20 text-sm flex items-center gap-2">
             <Globe className="w-4 h-4 text-blue-400 shrink-0" />
-            <span className="text-muted-foreground">AE Google Cloud:</span>
+            <span className="text-muted-foreground">Account Executive:</span>
             <span className="font-medium">{account.gcp_ae_name}</span>
             {account.gcp_ae_email && (
               <a href={`mailto:${account.gcp_ae_email}`} className="text-blue-400 hover:underline">
@@ -154,7 +201,7 @@ export default function AccountDetail() {
               </a>
             )}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Tabs */}
@@ -165,6 +212,7 @@ export default function AccountDetail() {
               {[
                 { value: "overview",      label: "Overview" },
                 { value: "contacts",      label: `Contactos (${contacts.length})` },
+                { value: "documents",     label: `Documentos (${documents.length})` },
                 { value: "opportunities", label: "Oportunidades" },
                 { value: "activity",      label: "Actividad" },
                 { value: "relationships", label: "Relaciones" },
@@ -260,6 +308,12 @@ export default function AccountDetail() {
                   ))}
                 </div>
               )}
+            </TabsContent>
+
+            {/* DOCUMENTS */}
+            <TabsContent value="documents" className="mt-0">
+              <h3 className="text-sm font-semibold mb-4">Documentos de la empresa</h3>
+              <AccountDocumentsSection accountId={id} canManage={canManage} />
             </TabsContent>
 
             {/* OPPORTUNITIES */}

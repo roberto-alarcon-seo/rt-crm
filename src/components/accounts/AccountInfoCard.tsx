@@ -9,54 +9,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Account, useUpdateAccount, AccountFormData } from "@/hooks/useAccounts";
+import { useLinkedExecutives } from "@/hooks/useAccountExecutives";
+import {
+  ACCOUNT_TYPES, INDUSTRIES, COUNTRIES, EMPLOYEE_RANGES, EMPLOYEE_RANGES_SELECTABLE,
+  ACCOUNT_TIERS, LIFECYCLE_STAGES, LEAD_SOURCES, labelOf,
+} from "@/lib/accountConstants";
 import { cn } from "@/lib/utils";
-
-const ACCOUNT_TYPES = [
-  { value: "lead", label: "Lead" },
-  { value: "prospect", label: "Prospecto" },
-  { value: "cliente", label: "Cliente" },
-  { value: "partner", label: "Partner" },
-  { value: "partner_y_cliente", label: "Partner y Cliente" },
-];
-
-const INDUSTRIES = [
-  { value: "tecnologia", label: "Tecnología" },
-  { value: "telecomunicaciones", label: "Telecomunicaciones" },
-  { value: "retail", label: "Retail / Comercio" },
-  { value: "consumo_masivo", label: "Consumo Masivo" },
-  { value: "manufactura", label: "Manufactura" },
-  { value: "servicios", label: "Servicios profesionales" },
-  { value: "salud", label: "Salud" },
-  { value: "educacion", label: "Educación" },
-  { value: "finanzas", label: "Finanzas / Banca" },
-  { value: "logistica", label: "Logística / Transporte" },
-  { value: "gobierno", label: "Gobierno / Sector público" },
-  { value: "media", label: "Media / Entretenimiento" },
-  { value: "energia", label: "Energía" },
-  { value: "construccion", label: "Construcción / Inmobiliario" },
-  { value: "otro", label: "Otro" },
-];
-
-const EMPLOYEE_RANGES = [
-  { value: "1-10", label: "1-10 empleados" },
-  { value: "11-50", label: "11-50 empleados" },
-  { value: "51-200", label: "51-200 empleados" },
-  { value: "201-500", label: "201-500 empleados" },
-  { value: "501-1000", label: "501-1000 empleados" },
-  { value: "1000+", label: "1000+ empleados" },
-];
-
-const COUNTRIES = [
-  { value: "MX", label: "🇲🇽 México" },
-  { value: "CO", label: "🇨🇴 Colombia" },
-  { value: "CL", label: "🇨🇱 Chile" },
-  { value: "AR", label: "🇦🇷 Argentina" },
-  { value: "PE", label: "🇵🇪 Perú" },
-  { value: "US", label: "🇺🇸 Estados Unidos" },
-];
-
-const labelOf = (opts: { value: string; label: string }[], v?: string | null) =>
-  opts.find(o => o.value === v)?.label ?? v ?? null;
 
 interface AccountInfoCardProps {
   account: Account;
@@ -65,7 +23,8 @@ interface AccountInfoCardProps {
 
 type EditForm = Pick<AccountFormData,
   "account_type" | "industry" | "website" | "country" | "city" | "employee_count" |
-  "gcp_ae_name" | "gcp_ae_email" | "notes">;
+  "legal_name" | "tax_id" | "account_tier" | "lifecycle_stage" | "lead_source" |
+  "main_phone" | "general_email" | "parent_company" | "notes">;
 
 function seed(a: Account): EditForm {
   return {
@@ -75,8 +34,14 @@ function seed(a: Account): EditForm {
     country: a.country || "",
     city: a.city || "",
     employee_count: a.employee_count || "",
-    gcp_ae_name: a.gcp_ae_name || "",
-    gcp_ae_email: a.gcp_ae_email || "",
+    legal_name: a.legal_name || "",
+    tax_id: a.tax_id || "",
+    account_tier: a.account_tier || "",
+    lifecycle_stage: a.lifecycle_stage || "",
+    lead_source: a.lead_source || "",
+    main_phone: a.main_phone || "",
+    general_email: a.general_email || "",
+    parent_company: a.parent_company || "",
     notes: a.notes || "",
   };
 }
@@ -85,6 +50,7 @@ export function AccountInfoCard({ account, canManage }: AccountInfoCardProps) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<EditForm>(seed(account));
   const updateAccount = useUpdateAccount();
+  const { linked: executives } = useLinkedExecutives(account.id);
 
   // Re-sembrar si cambia la empresa o se cancela.
   useEffect(() => { setForm(seed(account)); setEditing(false); }, [account.id]);
@@ -101,15 +67,37 @@ export function AccountInfoCard({ account, canManage }: AccountInfoCardProps) {
   };
 
   // Campos en modo lectura
+  // Los AEs vienen de la tabla puente; se cae a las columnas legacy solo si
+  // esta empresa nunca se migró al catálogo.
+  // Resumen agrupado por organización: "Google Cloud: Ana Ruiz (principal),
+  // Luis Paz · Oracle: María Sol". Una cuenta puede tener AEs de varias.
+  const aeSummary = executives.length
+    ? [...executives.reduce((map, ae) => {
+        const key = ae.organization_name ?? "Sin organización";
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(ae.is_primary ? `${ae.name} (principal)` : ae.name);
+        return map;
+      }, new Map<string, string[]>())]
+        .map(([org, names]) => `${org}: ${names.join(", ")}`)
+        .join(" · ")
+    : account.gcp_ae_name || null;
+
   const rows: { label: string; value: string | null; href?: string | null }[] = [
+    { label: "Razón social", value: account.legal_name || null },
     { label: "Tipo", value: labelOf(ACCOUNT_TYPES, account.account_type) },
     { label: "Industria", value: labelOf(INDUSTRIES, account.industry) },
+    { label: "Tier", value: labelOf(ACCOUNT_TIERS, account.account_tier) },
+    { label: "Etapa", value: labelOf(LIFECYCLE_STAGES, account.lifecycle_stage) },
+    { label: "Fuente", value: labelOf(LEAD_SOURCES, account.lead_source) },
+    { label: "RFC / Tax ID", value: account.tax_id || null },
+    { label: "Grupo corporativo", value: account.parent_company || null },
     { label: "Sitio web", value: account.website || null, href: account.website || null },
     { label: "País", value: labelOf(COUNTRIES, account.country) },
     { label: "Ciudad", value: account.city || null },
     { label: "Tamaño", value: labelOf(EMPLOYEE_RANGES, account.employee_count) },
-    { label: "AE Google Cloud", value: account.gcp_ae_name || null },
-    { label: "Email AE", value: account.gcp_ae_email || null, href: account.gcp_ae_email ? `mailto:${account.gcp_ae_email}` : null },
+    { label: "Teléfono", value: account.main_phone || null, href: account.main_phone ? `tel:${account.main_phone}` : null },
+    { label: "Email general", value: account.general_email || null, href: account.general_email ? `mailto:${account.general_email}` : null },
+    { label: "Account Executives", value: aeSummary },
   ];
 
   const filledCount = rows.filter(r => r.value).length + (account.notes ? 1 : 0);
@@ -212,17 +200,53 @@ export function AccountInfoCard({ account, canManage }: AccountInfoCardProps) {
                 <Select value={form.employee_count || ""} onValueChange={v => set("employee_count", v)}>
                   <SelectTrigger><SelectValue placeholder="Rango…" /></SelectTrigger>
                   <SelectContent>
-                    {EMPLOYEE_RANGES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                    {EMPLOYEE_RANGES_SELECTABLE.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="AE Google Cloud">
-                <Input placeholder="Nombre del AE" value={form.gcp_ae_name || ""} onChange={e => set("gcp_ae_name", e.target.value)} />
+              <Field label="Razón social" full>
+                <Input placeholder="Ej. Grupo Bimbo, S.A.B. de C.V." value={form.legal_name || ""} onChange={e => set("legal_name", e.target.value)} />
               </Field>
-              <Field label="Email AE">
-                <Input type="email" placeholder="ae@google.com" value={form.gcp_ae_email || ""} onChange={e => set("gcp_ae_email", e.target.value)} />
+              <Field label="RFC / Tax ID">
+                <Input placeholder="BIM940101ABC" value={form.tax_id || ""} onChange={e => set("tax_id", e.target.value.toUpperCase())} />
+              </Field>
+              <Field label="Grupo corporativo">
+                <Input placeholder="Empresa matriz" value={form.parent_company || ""} onChange={e => set("parent_company", e.target.value)} />
+              </Field>
+              <Field label="Tier">
+                <Select value={form.account_tier || ""} onValueChange={v => set("account_tier", v)}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                  <SelectContent>
+                    {ACCOUNT_TIERS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Etapa del ciclo">
+                <Select value={form.lifecycle_stage || ""} onValueChange={v => set("lifecycle_stage", v)}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                  <SelectContent>
+                    {LIFECYCLE_STAGES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Fuente de origen">
+                <Select value={form.lead_source || ""} onValueChange={v => set("lead_source", v)}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar…" /></SelectTrigger>
+                  <SelectContent>
+                    {LEAD_SOURCES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Teléfono principal">
+                <Input placeholder="+52 55 1234 5678" value={form.main_phone || ""} onChange={e => set("main_phone", e.target.value)} />
+              </Field>
+              <Field label="Email general">
+                <Input type="email" placeholder="contacto@empresa.com" value={form.general_email || ""} onChange={e => set("general_email", e.target.value)} />
               </Field>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Los Account Executives y los documentos se gestionan desde la pantalla de edición completa.
+            </p>
             <Field label="Notas">
               <Textarea rows={3} placeholder="Contexto relevante sobre esta empresa…"
                 value={form.notes || ""} onChange={e => set("notes", e.target.value)} />

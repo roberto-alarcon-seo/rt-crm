@@ -204,7 +204,7 @@ export function AccountDetailPanel({ accountId, onBack, onDeleted }: AccountDeta
         {account.gcp_ae_name && (
           <div className="mt-3 px-3 py-2 rounded-lg bg-blue-500/5 border border-blue-500/20 text-sm flex items-center gap-2">
             <Globe className="w-4 h-4 text-blue-400 shrink-0" />
-            <span className="text-muted-foreground">AE Google Cloud:</span>
+            <span className="text-muted-foreground">Account Executive:</span>
             <span className="font-medium">{account.gcp_ae_name}</span>
             {account.gcp_ae_email && (
               <a href={`mailto:${account.gcp_ae_email}`} className="text-blue-400 hover:underline">
