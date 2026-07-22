@@ -11,6 +11,7 @@ export interface Contact {
   name: string;
   first_name?: string | null;
   last_name?: string | null;
+  second_last_name?: string | null;
   email: string | null;
   phone: string | null;
   country: string | null;
@@ -80,6 +81,7 @@ export interface ContactFormData {
   name: string;
   first_name?: string | null;
   last_name?: string | null;
+  second_last_name?: string | null;
   email?: string;
   phone?: string;
   country?: string;
@@ -298,6 +300,7 @@ export function useContacts() {
           name: formData.name,
           first_name: formData.first_name || null,
           last_name: formData.last_name || null,
+          second_last_name: formData.second_last_name || null,
           email: formData.email || null,
           phone: formData.phone || null,
           country: formData.country || null,
@@ -383,6 +386,7 @@ export function useContacts() {
           name: formData.name,
           first_name: formData.first_name || null,
           last_name: formData.last_name || null,
+          second_last_name: formData.second_last_name || null,
           email: formData.email || null,
           phone: formData.phone || null,
           country: formData.country || null,

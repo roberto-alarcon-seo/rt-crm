@@ -44,6 +44,31 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.0",
+    date: "2026-07-22",
+    headline: "Ficha de contacto renovada",
+    changes: [
+      {
+        type: "improvement",
+        area: "Contactos",
+        description:
+          "La ficha de contacto se rediseñó para verse igual que la de Empresas: contenido centrado, índice lateral que sigue el scroll y secciones en tarjetas.",
+      },
+      {
+        type: "feature",
+        area: "Contactos",
+        description:
+          "Ahora el apellido se captura en dos campos: Apellido Paterno y Apellido Materno.",
+      },
+      {
+        type: "improvement",
+        area: "Contactos",
+        description:
+          "La sección de pipeline dejó de tener una sola etapa fija; ahora muestra todos los pipelines en los que está el contacto (puede estar en varios a la vez) y se gestionan desde la pestaña Oportunidades.",
+      },
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-07-22",
     headline: "Account Executives por empresa y contacto",

@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Loader2, Save, User, Settings2, X, MessageSquare, Activity,
   FolderOpen, TrendingUp, Phone, Mail, MapPin, Building2, Briefcase,
-  Linkedin, Star, Clock, Globe,
+  Linkedin, Star, Clock, Globe, Check, Handshake,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -28,26 +27,12 @@ import { toast } from "sonner";
 import { ContactActivityTimeline } from "@/components/contacts/ContactActivityTimeline";
 import ConsentBadge from "@/components/contacts/ConsentBadge";
 import { useContactDeals } from "@/hooks/useDeals";
-import { Handshake } from "lucide-react";
 import { useAccounts } from "@/hooks/useAccounts";
 import { ContactOpportunitiesSection } from "@/components/pipeline/ContactOpportunitiesSection";
+import { EditorSection } from "@/components/forms/EditorSection";
+import { Progress } from "@/components/ui/progress";
+import { useContactOpportunities } from "@/hooks/useOpportunities";
 import { cn } from "@/lib/utils";
-
-// B2B pipeline stages
-const B2B_STAGES = [
-  { value: "etapa_0_captacion",     label: "Captación" },
-  { value: "etapa_1_calificacion",  label: "Calificación" },
-  { value: "etapa_2_nurturing",     label: "Nurturing" },
-  { value: "etapa_3_demo",          label: "Demo / Discovery" },
-  { value: "etapa_4_oportunidad",   label: "Oportunidad Calificada" },
-  { value: "etapa_5_propuesta",     label: "Propuesta Enviada" },
-  { value: "etapa_6_negociacion",   label: "Negociación" },
-  { value: "etapa_7_compras_legal", label: "Compras / Legal" },
-  { value: "etapa_8_alta_proveedor",label: "Alta de Proveedor" },
-  { value: "etapa_9_contrato",      label: "Contrato / Firma" },
-  { value: "cerrada_ganada",        label: "Cerrada Ganada" },
-  { value: "cerrada_perdida",       label: "Cerrada Perdida" },
-];
 
 const LEAD_SOURCES = [
   { value: "whatsapp",   label: "WhatsApp" },
@@ -90,7 +75,7 @@ function parsePhoneValue(phone: string): { code: string; digits: string } {
 const SECTIONS = [
   { id: "general",  label: "Información general",  shortLabel: "General",  icon: User },
   { id: "empresa",  label: "Empresa vinculada",    shortLabel: "Empresa",  icon: Building2 },
-  { id: "lead",     label: "Pipeline B2B",          shortLabel: "Pipeline", icon: TrendingUp },
+  { id: "lead",     label: "Calificación",          shortLabel: "Calif.",   icon: TrendingUp },
   { id: "oportunidades", label: "Oportunidades",     shortLabel: "Oportunidades", icon: Handshake },
   { id: "custom",   label: "Campos personalizados", shortLabel: "Campos",   icon: Settings2 },
   { id: "activity", label: "Historial / Actividad", shortLabel: "Historial",icon: Activity },
@@ -167,6 +152,7 @@ export default function ContactEditor() {
     name: "",
     first_name: "",
     last_name: "",
+    second_last_name: "",
     email: "",
     phone: "",
     country: "",
@@ -240,7 +226,7 @@ export default function ContactEditor() {
 
         // Nombre/Apellidos: usa las columnas si el contacto ya las tiene; solo para
         // contactos previos (sin ningún campo separado) deriva del nombre completo.
-        const hasSplitName = c.first_name != null || c.last_name != null;
+        const hasSplitName = c.first_name != null || c.last_name != null || c.second_last_name != null;
         const nameParts = (contact.name || "").trim().split(/\s+/);
         const derivedFirst = hasSplitName ? (c.first_name ?? "") : (nameParts[0] || "");
         const derivedLast = hasSplitName ? (c.last_name ?? "") : nameParts.slice(1).join(" ");
@@ -249,6 +235,7 @@ export default function ContactEditor() {
           name: contact.name,
           first_name: derivedFirst,
           last_name: derivedLast,
+          second_last_name: hasSplitName ? (c.second_last_name ?? "") : "",
           email: contact.email || "",
           phone: contact.phone || "",
           country: contact.country || "",
@@ -275,11 +262,36 @@ export default function ContactEditor() {
     }
   }, [id, contacts, isEditing, navigate]);
 
+  // Scroll-spy: resalta en el índice la sección visible (patrón AccountEditor)
+  useEffect(() => {
+    if (loading) return;
+    const nodes = SECTIONS
+      .map(s => document.getElementById(`section-${s.id}`))
+      .filter((n): n is HTMLElement => !!n);
+    if (!nodes.length) return;
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length) setActiveSection(visible[0].target.id.replace("section-", ""));
+      },
+      { rootMargin: "-88px 0px -55% 0px", threshold: 0 }
+    );
+    nodes.forEach(n => observer.observe(n));
+    return () => observer.disconnect();
+  }, [loading, isEditing, id]);
+
+  const goToSection = (sectionId: string) => {
+    document.getElementById(`section-${sectionId}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const currentContact = isEditing ? contacts.find(c => c.id === id) : null;
   const lastInteractionAt = currentContact?.last_interaction_at || null;
   const originalPipelineStage = currentContact?.pipeline_stage || "etapa_0_captacion";
   const isClient = (currentContact as any)?.lifecycle === "client";
   const { data: contactDeals = [] } = useContactDeals(isClient ? id : undefined);
+  const { data: contactOpps = [] } = useContactOpportunities(id);
 
   const addTag = () => {
     if (tagInput.trim() && !formData.tags?.includes(tagInput.trim())) {
@@ -295,7 +307,7 @@ export default function ContactEditor() {
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast.error("El nombre es requerido");
-      setActiveSection("general");
+      goToSection("general");
       return;
     }
     if (parsedPhone.digits) {
@@ -303,14 +315,14 @@ export default function ContactEditor() {
       if (parsedPhone.digits.length !== expectedDigits) {
         const countryName = PHONE_CODES.find(p => p.code === parsedPhone.code)?.country;
         toast.error(`El teléfono debe tener ${expectedDigits} dígitos para ${countryName}`);
-        setActiveSection("general");
+        goToSection("general");
         return;
       }
     }
     for (const field of customFields) {
       if (field.is_required && !formData.custom_fields?.[field.key]) {
         toast.error(`El campo "${field.name}" es requerido`);
-        setActiveSection("custom");
+        goToSection("custom");
         return;
       }
     }
@@ -337,6 +349,11 @@ export default function ContactEditor() {
 
   const selectedAccount = accounts.find(a => a.id === formData.account_id);
 
+  // Avance de captura simple para la barra del header (campos núcleo llenos)
+  const coreFields = [formData.first_name, formData.email, formData.phone, formData.job_title, formData.account_id, formData.source];
+  const filledCore = coreFields.filter(Boolean).length;
+  const progressPct = Math.round((filledCore / coreFields.length) * 100);
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -358,9 +375,10 @@ export default function ContactEditor() {
     : SECTIONS.filter(s => s.id !== "activity" && s.id !== "oportunidades");
 
   return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Header */}
-      <div className="shrink-0 px-4 md:px-6 py-3 md:py-4 border-b border-border bg-card">
+    <div className="min-h-full">
+      {/* Header — barra superior pegajosa, centrada como en Empresas */}
+      <div className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-4 min-w-0">
             <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8 md:h-10 md:w-10" onClick={handleBack}>
@@ -413,6 +431,10 @@ export default function ContactEditor() {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            <div className="hidden lg:flex items-center gap-2 mr-1">
+              <div className="w-24"><Progress value={progressPct} className="h-1.5" /></div>
+              <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">{filledCore}/{coreFields.length}</span>
+            </div>
             {isEditing && id && formData.phone && !isMobile && (
               <Button variant="outline" size="sm" onClick={() => navigate(`/inbox?contact_id=${id}`)}>
                 <MessageSquare className="w-4 h-4 mr-2" />
@@ -436,96 +458,65 @@ export default function ContactEditor() {
             </Button>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Client lifecycle banner */}
       {isEditing && isClient && (
-        <div className="shrink-0 px-4 md:px-6 py-2 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-emerald-400">
-            <Handshake className="w-4 h-4 shrink-0" />
-            <span className="font-medium">Cliente activo</span>
-            {contactDeals.length > 0 && (
-              <span className="text-emerald-400/70">· {contactDeals[0].title}</span>
-            )}
+        <div className="border-b border-emerald-500/20 bg-emerald-500/10">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-2 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm text-emerald-400">
+              <Handshake className="w-4 h-4 shrink-0" />
+              <span className="font-medium">Cliente activo</span>
+              {contactDeals.length > 0 && (
+                <span className="text-emerald-400/70">· {contactDeals[0].title}</span>
+              )}
+            </div>
+            <button
+              onClick={() => navigate("/clients")}
+              className="text-xs text-emerald-400 hover:text-emerald-300 hover:underline transition-colors whitespace-nowrap"
+            >
+              Ver expediente →
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/clients")}
-            className="text-xs text-emerald-400 hover:text-emerald-300 hover:underline transition-colors whitespace-nowrap"
-          >
-            Ver expediente →
-          </button>
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Mobile tab bar */}
-        {isMobile && (
-          <div className="shrink-0 border-b border-border bg-muted/30">
-            <nav className="flex">
-              {availableSections.map(section => {
-                const Icon = section.icon;
-                const isActive = activeSection === section.id;
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={cn(
-                      "flex-1 flex flex-col items-center gap-0.5 py-2.5 relative transition-colors",
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    )}
-                  >
-                    {isActive && <span className="absolute top-0 left-0 right-0 h-0.5 rounded-full bg-primary" />}
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="text-[9px] font-medium leading-none">{section.shortLabel}</span>
-                  </button>
-                );
-              })}
-            </nav>
+      {/* Índice + contenido (centrado, como Empresas) */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-24 pt-6 flex gap-8">
+        {/* Índice lateral con scroll-spy (se oculta en pantallas angostas) */}
+        <nav className="hidden lg:block w-52 shrink-0" aria-label="Secciones del formulario">
+          <div className="sticky top-24 space-y-0.5">
+            {availableSections.map(section => {
+              const active = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => goToSection(section.id)}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors text-left",
+                    active
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                  )}
+                >
+                  <section.icon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate">{section.label}</span>
+                  {active && <Check className="h-3.5 w-3.5 shrink-0 text-primary/70" />}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </nav>
 
-        {/* Desktop sidebar */}
-        <div className="hidden md:block w-56 shrink-0 border-r border-border bg-muted/30">
-          <ScrollArea className="h-full">
-            <nav className="p-3 space-y-1">
-              {availableSections.map(section => {
-                const Icon = section.icon;
-                const isActive = activeSection === section.id;
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{section.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          </ScrollArea>
-        </div>
-
-        {/* Content area */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-4 md:p-6 max-w-2xl mx-auto">
+        {/* Contenido apilado en tarjetas */}
+        <div className="flex-1 min-w-0 space-y-5">
 
             {/* GENERAL */}
-            {activeSection === "general" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold mb-1">Información general</h2>
-                  <p className="text-sm text-muted-foreground">Datos personales y de contacto</p>
-                </div>
-
+            <EditorSection id="general" icon={User} title="Información general">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="first_name">Nombre *</Label>
                       <Input
@@ -534,21 +525,34 @@ export default function ContactEditor() {
                         value={formData.first_name || ""}
                         onChange={e => {
                           const first = e.target.value;
-                          const full = [first, formData.last_name].filter(Boolean).join(" ").trim();
+                          const full = [first, formData.last_name, formData.second_last_name].filter(Boolean).join(" ").trim();
                           setFormData({ ...formData, first_name: first, name: full });
                         }}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="last_name">Apellidos</Label>
+                      <Label htmlFor="last_name">Apellido Paterno</Label>
                       <Input
                         id="last_name"
-                        placeholder="Apellidos"
+                        placeholder="Apellido paterno"
                         value={formData.last_name || ""}
                         onChange={e => {
                           const last = e.target.value;
-                          const full = [formData.first_name, last].filter(Boolean).join(" ").trim();
+                          const full = [formData.first_name, last, formData.second_last_name].filter(Boolean).join(" ").trim();
                           setFormData({ ...formData, last_name: last, name: full });
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="second_last_name">Apellido Materno</Label>
+                      <Input
+                        id="second_last_name"
+                        placeholder="Apellido materno"
+                        value={formData.second_last_name || ""}
+                        onChange={e => {
+                          const second = e.target.value;
+                          const full = [formData.first_name, formData.last_name, second].filter(Boolean).join(" ").trim();
+                          setFormData({ ...formData, second_last_name: second, name: full });
                         }}
                       />
                     </div>
@@ -700,17 +704,10 @@ export default function ContactEditor() {
                     />
                   </div>
                 </div>
-              </div>
-            )}
+            </EditorSection>
 
             {/* EMPRESA */}
-            {activeSection === "empresa" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold mb-1">Empresa vinculada</h2>
-                  <p className="text-sm text-muted-foreground">Asocia este contacto a una empresa de tu CRM</p>
-                </div>
-
+            <EditorSection id="empresa" icon={Building2} title="Empresa vinculada">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Empresa</Label>
@@ -796,39 +793,32 @@ export default function ContactEditor() {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+            </EditorSection>
 
-            {/* PIPELINE B2B */}
-            {activeSection === "lead" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold mb-1">Pipeline B2B</h2>
-                  <p className="text-sm text-muted-foreground">Etapa, score y seguimiento comercial</p>
-                </div>
+            {/* CALIFICACIÓN (antes "Pipeline B2B" — la etapa vive ahora en las oportunidades) */}
+            <EditorSection id="lead" icon={TrendingUp} title="Calificación">
+                {/* Pipelines activos del contacto (multi-pipeline, solo lectura) */}
+                {isEditing && id && contactOpps.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs text-muted-foreground">Pipelines activos ({contactOpps.length})</Label>
+                      <button type="button" onClick={() => goToSection("oportunidades")} className="text-xs text-primary hover:underline">
+                        Gestionar en Oportunidades →
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {contactOpps.map(o => (
+                        <Badge key={o.id} variant="outline" className="gap-1.5 py-1 font-normal">
+                          {o.stage?.color && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: o.stage.color }} />}
+                          <span className="font-medium">{o.pipeline?.name ?? "Pipeline"}</span>
+                          {o.stage?.name && <span className="text-muted-foreground">· {o.stage.name}</span>}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
-                  {/* Pipeline stage */}
-                  <div className="space-y-2">
-                    <Label>
-                      <TrendingUp className="w-3.5 h-3.5 inline mr-1.5" />
-                      Etapa del pipeline
-                    </Label>
-                    <Select
-                      value={formData.pipeline_stage ?? "etapa_0_captacion"}
-                      onValueChange={v => setFormData({ ...formData, pipeline_stage: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {B2B_STAGES.map(s => (
-                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {/* Source */}
                   <div className="space-y-2">
                     <Label>Canal de origen</Label>
@@ -932,17 +922,10 @@ export default function ContactEditor() {
                     </Select>
                   </div>
                 </div>
-              </div>
-            )}
+            </EditorSection>
 
-            {/* CUSTOM FIELDS */}
-            {activeSection === "custom" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold mb-1">Campos personalizados</h2>
-                  <p className="text-sm text-muted-foreground">Información adicional definida por tu equipo</p>
-                </div>
-
+            {/* CAMPOS PERSONALIZADOS */}
+            <EditorSection id="custom" icon={Settings2} title="Campos personalizados">
                 {customFields.length === 0 ? (
                   <Card>
                     <CardContent className="py-12">
@@ -1030,32 +1013,28 @@ export default function ContactEditor() {
                     )}
                   </Tabs>
                 )}
-              </div>
-            )}
+            </EditorSection>
 
             {/* OPORTUNIDADES */}
-            {activeSection === "oportunidades" && isEditing && id && (
-              <ContactOpportunitiesSection
-                contactId={id}
-                accountId={formData.account_id ?? null}
-                contactName={formData.name}
-              />
+            {isEditing && id && (
+              <div id="section-oportunidades" className="scroll-mt-24">
+                <ContactOpportunitiesSection
+                  contactId={id}
+                  accountId={formData.account_id ?? null}
+                  contactName={formData.name}
+                />
+              </div>
             )}
 
-            {/* ACTIVITY */}
-            {activeSection === "activity" && isEditing && id && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold mb-1">Historial / Actividad</h2>
-                  <p className="text-sm text-muted-foreground">Interacciones y eventos relacionados con este contacto</p>
-                </div>
+            {/* HISTORIAL */}
+            {isEditing && id && (
+              <EditorSection id="activity" icon={Activity} title="Historial / Actividad">
                 <ContactActivityTimeline contactId={id} />
-              </div>
+              </EditorSection>
             )}
 
           </div>
         </div>
-      </div>
     </div>
   );
 }

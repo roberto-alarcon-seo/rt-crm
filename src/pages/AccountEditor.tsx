@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, ReactNode } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import {
   ArrowLeft, Loader2, Save, Building2, Globe, MapPin, Users, Mail, FileText,
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EditorSection as Section } from "@/components/forms/EditorSection";
 import { Progress } from "@/components/ui/progress";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -809,33 +809,3 @@ export default function AccountEditor() {
   );
 }
 
-/**
- * Bloque de formulario. `scroll-mt-24` compensa la barra pegajosa para que al
- * saltar desde el índice el título no quede escondido debajo de ella.
- */
-function Section({
-  id, icon: Icon, title, hint, children,
-}: {
-  id: string;
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  hint?: string;
-  children: ReactNode;
-}) {
-  return (
-    <Card id={`section-${id}`} className="scroll-mt-24">
-      <CardHeader className="pb-4 border-b border-border/50">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
-            <Icon className="h-3.5 w-3.5" />
-          </span>
-          <span className="flex-1">{title}</span>
-          {hint && (
-            <span className="text-xs font-normal text-muted-foreground">{hint}</span>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-5 space-y-5">{children}</CardContent>
-    </Card>
-  );
-}
