@@ -44,6 +44,37 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.3.0",
+    date: "2026-07-21",
+    headline: "Pipelines dinámicos",
+    changes: [
+      {
+        type: "feature",
+        area: "Oportunidades",
+        description:
+          "El módulo de Oportunidades ahora usa pipelines dinámicos: cada tarjeta es una oportunidad con monto, probabilidad, contacto y empresa, y se arrastra entre etapas (drag & drop). Un mismo contacto puede tener varias oportunidades en distintos pipelines a la vez (Software, Nube de Google, Marketing, etc.).",
+      },
+      {
+        type: "feature",
+        area: "Configuración",
+        description:
+          "Nueva sección Configuración › Pipelines (solo administradores): crea y edita pipelines y sus etapas —nombre, color, tipo (en proceso/ganada/perdida) y probabilidad— y reordena las etapas arrastrándolas.",
+      },
+      {
+        type: "feature",
+        area: "Contactos",
+        description:
+          "La ficha de contacto tiene una nueva pestaña Oportunidades donde ves y creas los negocios de ese contacto en cualquier pipeline.",
+      },
+      {
+        type: "internal",
+        area: "Oportunidades",
+        description:
+          "Nuevas tablas pipelines y pipeline_stages por tenant; la tabla opportunities pasa a etapa dinámica. Los eventos de Meta Pixel/CAPI y las conversiones siguen funcionando vía el espejo de etapa en el contacto.",
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-07-21",
     headline: "Página de novedades",

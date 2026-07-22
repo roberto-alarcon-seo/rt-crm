@@ -3293,6 +3293,95 @@ export type Database = {
           },
         ]
       }
+      pipelines: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_archived: boolean
+          is_default: boolean
+          name: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_default?: boolean
+          name: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_default?: boolean
+          name?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pipeline_stages: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          legacy_stage_key: string | null
+          name: string
+          pipeline_id: string
+          probability_default: number
+          sort_order: number
+          stage_type: Database["public"]["Enums"]["pipeline_stage_type"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          legacy_stage_key?: string | null
+          name: string
+          pipeline_id: string
+          probability_default?: number
+          sort_order?: number
+          stage_type?: Database["public"]["Enums"]["pipeline_stage_type"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          legacy_stage_key?: string | null
+          name?: string
+          pipeline_id?: string
+          probability_default?: number
+          sort_order?: number
+          stage_type?: Database["public"]["Enums"]["pipeline_stage_type"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stages_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunities: {
         Row: {
           account_id: string | null
@@ -3313,6 +3402,10 @@ export type Database = {
           pnh_opportunity_id: string | null
           primary_contact_id: string | null
           stage: Database["public"]["Enums"]["opportunity_stage"]
+          pipeline_id: string | null
+          stage_id: string | null
+          status: string
+          position: number
           tenant_id: string
           total_amount_usd: number | null
           updated_at: string
@@ -3336,6 +3429,10 @@ export type Database = {
           pnh_opportunity_id?: string | null
           primary_contact_id?: string | null
           stage?: Database["public"]["Enums"]["opportunity_stage"]
+          pipeline_id?: string | null
+          stage_id?: string | null
+          status?: string
+          position?: number
           tenant_id: string
           total_amount_usd?: number | null
           updated_at?: string
@@ -3359,6 +3456,10 @@ export type Database = {
           pnh_opportunity_id?: string | null
           primary_contact_id?: string | null
           stage?: Database["public"]["Enums"]["opportunity_stage"]
+          pipeline_id?: string | null
+          stage_id?: string | null
+          status?: string
+          position?: number
           tenant_id?: string
           total_amount_usd?: number | null
           updated_at?: string
@@ -6274,6 +6375,7 @@ export type Database = {
         | "etapa_9_contrato"
         | "cerrada_ganada"
         | "cerrada_perdida"
+      pipeline_stage_type: "open" | "won" | "lost"
       segment_status: "active" | "archived"
       segment_type: "static" | "dynamic"
       task_priority: "low" | "normal" | "high" | "urgent"
@@ -6566,6 +6668,7 @@ export const Constants = {
         "cerrada_ganada",
         "cerrada_perdida",
       ],
+      pipeline_stage_type: ["open", "won", "lost"],
       segment_status: ["active", "archived"],
       segment_type: ["static", "dynamic"],
       task_priority: ["low", "normal", "high", "urgent"],

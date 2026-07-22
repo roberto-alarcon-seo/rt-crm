@@ -5,7 +5,7 @@ import {
   MessageSquare,
   Settings as SettingsIcon, ListPlus, Bot, BookOpen, Code2, ShieldCheck, BarChart3,
   MessagesSquare, Brain, UserSquare2, Sparkles, FileText, Users, RefreshCw, TrendingUp,
-  Building2, Globe,
+  Building2, Globe, GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -105,6 +105,15 @@ const menuItems: MenuItem[] = [
     title: "Consentimiento",
     description: "Opt-out, DND y bloqueos",
     group: "Leads",
+  },
+  {
+    id: "pipelines",
+    path: "/settings/pipelines",
+    icon: GitBranch,
+    title: "Pipelines",
+    description: "Pipelines y etapas de oportunidades",
+    group: "Leads",
+    requireRoles: ["administrador"],
   },
   {
     id: "assignment-rules",

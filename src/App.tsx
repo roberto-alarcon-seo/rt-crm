@@ -72,6 +72,7 @@ import SettingsSDRAgent from "./pages/settings/SettingsSDRAgent";
 import SettingsOpportunityAgent from "./pages/settings/SettingsOpportunityAgent";
 import SettingsConversions from "./pages/settings/SettingsConversions";
 import SettingsWidget from "./pages/settings/SettingsWidget";
+import SettingsPipelines from "./pages/settings/SettingsPipelines";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -236,6 +237,7 @@ const App = () => (
               <Route path="/settings/templates" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><Templates /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/expedientes" element={<Navigate to="/settings" replace />} />
               <Route path="/settings/team" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><SettingsTeamPage /></MainLayout></ProtectedRoute>} />
+              <Route path="/settings/pipelines" element={<ProtectedRoute requireRoles={["administrador"]}><MainLayout><SettingsPipelines /></MainLayout></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><MainLayout><SettingsProfilePage /></MainLayout></ProtectedRoute>} />
               {/* Redirects for removed sections */}
               <Route path="/settings/users" element={<Navigate to="/settings/team" replace />} />

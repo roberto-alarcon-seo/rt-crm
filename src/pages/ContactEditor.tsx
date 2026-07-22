@@ -30,6 +30,7 @@ import ConsentBadge from "@/components/contacts/ConsentBadge";
 import { useContactDeals } from "@/hooks/useDeals";
 import { Handshake } from "lucide-react";
 import { useAccounts } from "@/hooks/useAccounts";
+import { ContactOpportunitiesSection } from "@/components/pipeline/ContactOpportunitiesSection";
 import { cn } from "@/lib/utils";
 
 // B2B pipeline stages
@@ -90,6 +91,7 @@ const SECTIONS = [
   { id: "general",  label: "Información general",  shortLabel: "General",  icon: User },
   { id: "empresa",  label: "Empresa vinculada",    shortLabel: "Empresa",  icon: Building2 },
   { id: "lead",     label: "Pipeline B2B",          shortLabel: "Pipeline", icon: TrendingUp },
+  { id: "oportunidades", label: "Oportunidades",     shortLabel: "Oportunidades", icon: Handshake },
   { id: "custom",   label: "Campos personalizados", shortLabel: "Campos",   icon: Settings2 },
   { id: "activity", label: "Historial / Actividad", shortLabel: "Historial",icon: Activity },
 ];
@@ -351,7 +353,9 @@ export default function ContactEditor() {
     );
   }
 
-  const availableSections = isEditing ? SECTIONS : SECTIONS.filter(s => s.id !== "activity");
+  const availableSections = isEditing
+    ? SECTIONS
+    : SECTIONS.filter(s => s.id !== "activity" && s.id !== "oportunidades");
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -1027,6 +1031,15 @@ export default function ContactEditor() {
                   </Tabs>
                 )}
               </div>
+            )}
+
+            {/* OPORTUNIDADES */}
+            {activeSection === "oportunidades" && isEditing && id && (
+              <ContactOpportunitiesSection
+                contactId={id}
+                accountId={formData.account_id ?? null}
+                contactName={formData.name}
+              />
             )}
 
             {/* ACTIVITY */}
