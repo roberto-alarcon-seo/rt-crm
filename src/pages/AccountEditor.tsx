@@ -16,10 +16,9 @@ import {
 import {
   useAccount, useCreateAccount, useUpdateAccount, useDuplicateTaxId, AccountFormData,
 } from "@/hooks/useAccounts";
-import { useLinkedExecutives, useSetAccountExecutives } from "@/hooks/useAccountExecutives";
 import { useUploadAccountDocuments, useAccountDocuments } from "@/hooks/useAccountDocuments";
 import { useTeamUsers } from "@/hooks/useTeamUsers";
-import { AccountExecutivesField } from "@/components/accounts/AccountExecutivesField";
+import { ProjectPartnersField } from "@/components/accounts/ProjectPartnersField";
 import { AccountDocumentsSection } from "@/components/accounts/AccountDocumentsSection";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -104,7 +103,7 @@ const SECTIONS: SectionDef[] = [
   { id: "size",       label: "Firmografía",    icon: Users,     group: GROUP_COMPANY,  fields: ["employee_count", "locations_count", "annual_revenue", "revenue_currency", "parent_company", "stock_ticker", "founded_year"] },
   { id: "commercial", label: "Clasificación",  icon: Briefcase, group: GROUP_RELATION, fields: ["account_tier", "lifecycle_stage", "lead_source", "assigned_to", "preferred_currency"] },
   { id: "fiscal",     label: "Fiscal",         icon: Receipt,   group: GROUP_RELATION, fields: ["tax_id", "tax_regime", "fiscal_street", "fiscal_ext_number", "fiscal_int_number", "fiscal_neighborhood", "fiscal_zip", "fiscal_state", "fiscal_country", "incorporation_country"] },
-  { id: "executives", label: "Account Exec.",  icon: Mail,      group: GROUP_RELATION, fields: [] },
+  { id: "executives", label: "Account Executives", icon: Mail,  group: GROUP_RELATION, fields: [] },
   { id: "documents",  label: "Documentos",     icon: Paperclip, group: GROUP_RELATION, fields: [] },
   { id: "notes",      label: "Notas",          icon: FileText,  group: GROUP_RELATION, fields: ["notes"] },
 ];
@@ -125,17 +124,13 @@ export default function AccountEditor() {
   const { hasRole } = useAuth();
 
   const { account, isLoading: loadingAccount } = useAccount(id);
-  const { linked } = useLinkedExecutives(id);
   const { documents } = useAccountDocuments(id);
   const { users: teamUsers } = useTeamUsers();
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
-  const setExecutives = useSetAccountExecutives();
   const uploadDocs = useUploadAccountDocuments();
 
   const [formData, setFormData] = useState<AccountFormData>(EMPTY_FORM);
-  const [aeIds, setAeIds] = useState<string[]>([]);
-  const [primaryAeId, setPrimaryAeId] = useState<string | null>(null);
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [domainsText, setDomainsText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -161,13 +156,6 @@ export default function AccountEditor() {
     setDomainsText((account.email_domains ?? []).join(", "));
   }, [id, account, isEditing]);
 
-  useEffect(() => {
-    if (linked.length) {
-      setAeIds(linked.map(ae => ae.id));
-      setPrimaryAeId(linked.find(ae => ae.is_primary)?.id ?? linked[0].id);
-    }
-  }, [linked]);
-
   const docsCount = documents.length + stagedFiles.length;
 
   /** Campos llenos por sección, para el índice lateral y la barra de avance. */
@@ -175,7 +163,7 @@ export default function AccountEditor() {
     const perSection: Record<string, { filled: number; total: number }> = {};
     for (const section of SECTIONS) {
       if (section.id === "executives") {
-        perSection[section.id] = { filled: aeIds.length, total: 0 };
+        perSection[section.id] = { filled: 0, total: 0 };
       } else if (section.id === "documents") {
         perSection[section.id] = { filled: docsCount, total: 0 };
       } else {
@@ -188,7 +176,7 @@ export default function AccountEditor() {
     const filled = Object.values(perSection).reduce((a, s) => a + (s.total ? s.filled : 0), 0);
     const total = Object.values(perSection).reduce((a, s) => a + s.total, 0);
     return { perSection, filled, total };
-  }, [formData, aeIds.length, docsCount]);
+  }, [formData, docsCount]);
 
   /* ── Scroll-spy: resalta en el índice la sección visible ── */
   useEffect(() => {
@@ -251,7 +239,8 @@ export default function AccountEditor() {
         await updateAccount.mutateAsync({ id: accountId, ...formData });
       }
 
-      await setExecutives.mutateAsync({ accountId, aeIds, primaryId: primaryAeId });
+      // Las empresas a cargo se guardan en vivo desde su propia sección (requieren
+      // una cuenta ya creada), así que aquí no hay que persistir nada extra.
 
       // Los archivos en espera solo existen en el alta: la empresa ya se creó,
       // así que un fallo aquí no debe tumbar el guardado — se avisa y se
@@ -769,23 +758,21 @@ export default function AccountEditor() {
             </div>
           </Section>
 
-          {/* ── Account Executives ── */}
+          {/* ── Account Executives (empresas a cargo del proyecto) ── */}
           <Section
             id="executives"
             icon={Mail}
             title="Account Executives"
-            hint={aeIds.length > 1 ? `${aeIds.length} asignados` : undefined}
           >
-            <AccountExecutivesField
-              value={aeIds}
-              onChange={setAeIds}
-              primaryId={primaryAeId}
-              onPrimaryChange={setPrimaryAeId}
-              linked={linked}
-              disabled={!canManage}
-            />
-            {account?.gcp_ae_name && aeIds.length === 0 && (
-              <p className="text-xs text-muted-foreground">
+            {isEditing && id ? (
+              <ProjectPartnersField accountId={id} disabled={!canManage} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Guarda la empresa primero para asignar las empresas a cargo (proveedor, referidor…) y sus ejecutivos.
+              </p>
+            )}
+            {account?.gcp_ae_name && (
+              <p className="text-xs text-muted-foreground mt-2">
                 Registro anterior: <span className="font-medium">{account.gcp_ae_name}</span>
                 {account.gcp_ae_email && ` · ${account.gcp_ae_email}`}
               </p>

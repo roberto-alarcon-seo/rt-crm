@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Account, useUpdateAccount, AccountFormData } from "@/hooks/useAccounts";
-import { useLinkedExecutives } from "@/hooks/useAccountExecutives";
+import { useAccountPartners, PARTNER_ROLES } from "@/hooks/useAccountPartners";
 import {
   ACCOUNT_TYPES, INDUSTRIES, COUNTRIES, EMPLOYEE_RANGES, EMPLOYEE_RANGES_SELECTABLE,
   ACCOUNT_TIERS, LIFECYCLE_STAGES, LEAD_SOURCES, labelOf,
@@ -50,7 +50,7 @@ export function AccountInfoCard({ account, canManage }: AccountInfoCardProps) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<EditForm>(seed(account));
   const updateAccount = useUpdateAccount();
-  const { linked: executives } = useLinkedExecutives(account.id);
+  const { data: partners = [] } = useAccountPartners(account.id);
 
   // Re-sembrar si cambia la empresa o se cancela.
   useEffect(() => { setForm(seed(account)); setEditing(false); }, [account.id]);
@@ -66,19 +66,15 @@ export function AccountInfoCard({ account, canManage }: AccountInfoCardProps) {
     setEditing(false);
   };
 
-  // Campos en modo lectura
-  // Los AEs vienen de la tabla puente; se cae a las columnas legacy solo si
-  // esta empresa nunca se migró al catálogo.
-  // Resumen agrupado por organización: "Google Cloud: Ana Ruiz (principal),
-  // Luis Paz · Oracle: María Sol". Una cuenta puede tener AEs de varias.
-  const aeSummary = executives.length
-    ? [...executives.reduce((map, ae) => {
-        const key = ae.organization_name ?? "Sin organización";
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(ae.is_primary ? `${ae.name} (principal)` : ae.name);
-        return map;
-      }, new Map<string, string[]>())]
-        .map(([org, names]) => `${org}: ${names.join(", ")}`)
+  // Resumen de empresas a cargo: "Google Cloud (Proveedor): Ana, Luis ·
+  // Tercero X (Referidor): María". Cae a la columna legacy si no hay ninguna.
+  const roleLabel = (r: string) => PARTNER_ROLES.find(x => x.value === r)?.label ?? r;
+  const aeSummary = partners.length
+    ? partners
+        .map(p => {
+          const names = p.contacts.map(c => c.name).join(", ");
+          return `${p.partner_name} (${roleLabel(p.role)})${names ? `: ${names}` : ""}`;
+        })
         .join(" · ")
     : account.gcp_ae_name || null;
 

@@ -91,6 +91,71 @@ export type Database = {
           },
         ]
       }
+      account_project_partners: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          partner_account_id: string
+          role: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_account_id: string
+          role?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          partner_account_id?: string
+          role?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      account_partner_contacts: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          project_partner_id: string
+          tenant_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          project_partner_id: string
+          tenant_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          project_partner_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_partner_contacts_project_partner_id_fkey"
+            columns: ["project_partner_id"]
+            isOneToOne: false
+            referencedRelation: "account_project_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]

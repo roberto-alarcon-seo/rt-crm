@@ -44,6 +44,31 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.4.0",
+    date: "2026-07-22",
+    headline: "Account Executives por empresa y contacto",
+    changes: [
+      {
+        type: "feature",
+        area: "Empresas",
+        description:
+          "Los Account Executives ahora se eligen desde tus propias Empresas del CRM (tipo Partner) y sus Contactos, en vez de un catálogo aparte. Un proyecto puede tener varias empresas a cargo a la vez (p.ej. el proveedor y el tercero que refirió), cada una con su rol (Proveedor / Referidor / Otro).",
+      },
+      {
+        type: "improvement",
+        area: "Empresas",
+        description:
+          "Al elegir una empresa a cargo, solo aparecen sus contactos para asignarlos como ejecutivos, y el selector oculta las empresas ya agregadas. Todo se guarda en vivo desde la ficha de la empresa.",
+      },
+      {
+        type: "internal",
+        area: "Empresas",
+        description:
+          "Nuevas tablas account_project_partners y account_partner_contacts. El catálogo anterior (ae_organizations / account_executives) queda deprecado.",
+      },
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-07-21",
     headline: "Pipelines dinámicos",
