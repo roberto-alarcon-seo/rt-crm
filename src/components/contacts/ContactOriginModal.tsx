@@ -19,18 +19,13 @@ import { useCreateDeal } from "@/hooks/useDeals";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { PIPELINE_STAGES } from "@/components/contacts/LeadPriorityCard";
+import { PHONE_CODES, phoneCodeInfo, normalizePhoneInput, clampPhoneDigits } from "@/lib/phone";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type OriginKey = 'digital' | 'phone' | 'referral' | 'site_visit';
 type VisitOutcome = 'very_interested' | 'interested' | 'low_interest' | 'not_qualified';
 type Step = 'origin' | 'capture' | 'duplicate';
-
-const PHONE_CODES = [
-  { code: '+52', label: '🇲🇽 +52', country: 'México',   digits: 10 },
-  { code: '+57', label: '🇨🇴 +57', country: 'Colombia', digits: 10 },
-  { code: '+51', label: '🇵🇪 +51', country: 'Perú',     digits: 9  },
-] as const;
 
 const ORIGINS = [
   {
@@ -221,8 +216,8 @@ export function ContactOriginModal({ open, onOpenChange, onCreated }: ContactOri
 
   // ── Validation helpers ────────────────────────────────────────────────────────
   const phoneDigits = form.phone.replace(/\D/g, '');
-  const expectedDigits = PHONE_CODES.find(p => p.code === form.phoneCode)?.digits ?? 10;
-  const countryName = PHONE_CODES.find(p => p.code === form.phoneCode)?.country;
+  const expectedDigits = phoneCodeInfo(form.phoneCode).digits;
+  const countryName = phoneCodeInfo(form.phoneCode).country;
   const fullPhone = `${form.phoneCode}${phoneDigits}`;
 
   const validate = (): string | null => {
@@ -458,7 +453,9 @@ export function ContactOriginModal({ open, onOpenChange, onCreated }: ContactOri
                 <div className="flex gap-2">
                   <Select
                     value={form.phoneCode}
-                    onValueChange={v => setForm(p => ({ ...p, phoneCode: v, phone: '' }))}
+                    onValueChange={v =>
+                      setForm(p => ({ ...p, phoneCode: v, phone: clampPhoneDigits(p.phone, v) }))
+                    }
                   >
                     <SelectTrigger className="w-28 shrink-0">
                       <SelectValue />
@@ -473,9 +470,13 @@ export function ContactOriginModal({ open, onOpenChange, onCreated }: ContactOri
                     id="c-phone"
                     placeholder={`${expectedDigits} dígitos`}
                     value={form.phone}
-                    onChange={e => setForm(p => ({ ...p, phone: e.target.value.replace(/\D/g, '') }))}
-                    maxLength={expectedDigits}
-                    inputMode="numeric"
+                    onChange={e => setForm(p => {
+                      // Sin maxLength: el pegado se limpia acá (separadores,
+                      // +52, prefijo 00) para no perder dígitos por el camino.
+                      const next = normalizePhoneInput(e.target.value, p.phoneCode);
+                      return { ...p, phoneCode: next.code, phone: next.digits };
+                    })}
+                    inputMode="tel"
                     className="flex-1"
                   />
                 </div>

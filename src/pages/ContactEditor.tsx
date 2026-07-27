@@ -33,6 +33,8 @@ import { EditorSection } from "@/components/forms/EditorSection";
 import { Progress } from "@/components/ui/progress";
 import { useContactOpportunities } from "@/hooks/useOpportunities";
 import { cn } from "@/lib/utils";
+import { PhoneField } from "@/components/forms/PhoneField";
+import { parsePhoneValue, phoneCodeInfo, formatPhoneForDisplay } from "@/lib/phone";
 
 const LEAD_SOURCES = [
   { value: "whatsapp",   label: "WhatsApp" },
@@ -53,24 +55,6 @@ const PREFERRED_CHANNELS = [
   { value: "phone",     label: "Teléfono" },
   { value: "linkedin",  label: "LinkedIn" },
 ];
-
-const PHONE_CODES = [
-  { code: "+52", label: "🇲🇽 +52", country: "México",   digits: 10 },
-  { code: "+57", label: "🇨🇴 +57", country: "Colombia", digits: 10 },
-  { code: "+51", label: "🇵🇪 +51", country: "Perú",     digits: 9  },
-  { code: "+1",  label: "🇺🇸 +1",  country: "EEUU",     digits: 10 },
-] as const;
-
-function parsePhoneValue(phone: string): { code: string; digits: string } {
-  const stripped = phone.replace(/\s/g, "");
-  for (const pc of PHONE_CODES) {
-    if (stripped.startsWith(pc.code)) {
-      return { code: pc.code, digits: stripped.slice(pc.code.length).replace(/\D/g, "") };
-    }
-  }
-  return { code: "+52", digits: stripped.replace(/\D/g, "") };
-}
-
 
 const SECTIONS = [
   { id: "general",  label: "Información general",  shortLabel: "General",  icon: User },
@@ -311,9 +295,8 @@ export default function ContactEditor() {
       return;
     }
     if (parsedPhone.digits) {
-      const expectedDigits = PHONE_CODES.find(p => p.code === parsedPhone.code)?.digits ?? 10;
+      const { digits: expectedDigits, country: countryName } = phoneCodeInfo(parsedPhone.code);
       if (parsedPhone.digits.length !== expectedDigits) {
-        const countryName = PHONE_CODES.find(p => p.code === parsedPhone.code)?.country;
         toast.error(`El teléfono debe tener ${expectedDigits} dígitos para ${countryName}`);
         goToSection("general");
         return;
@@ -418,13 +401,13 @@ export default function ContactEditor() {
                   )}
                   {formData.phone && (
                     <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" /> {formData.phone}
+                      <Phone className="h-3 w-3" /> {formatPhoneForDisplay(formData.phone)}
                     </span>
                   )}
                 </div>
                 {isMobile && formData.phone && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <Phone className="h-3 w-3" /> {formData.phone}
+                    <Phone className="h-3 w-3" /> {formatPhoneForDisplay(formData.phone)}
                   </p>
                 )}
               </div>
@@ -590,36 +573,11 @@ export default function ContactEditor() {
                         <Phone className="w-3.5 h-3.5 inline mr-1.5" />
                         Teléfono
                       </Label>
-                      <div className="flex gap-2">
-                        <Select
-                          value={parsedPhone.code}
-                          onValueChange={code => setFormData({ ...formData, phone: code + parsedPhone.digits })}
-                        >
-                          <SelectTrigger className="w-28 shrink-0">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PHONE_CODES.map(pc => (
-                              <SelectItem key={pc.code} value={pc.code}>{pc.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          id="phone"
-                          placeholder={
-                            PHONE_CODES.find(p => p.code === parsedPhone.code)?.digits === 9
-                              ? "9 dígitos"
-                              : "10 dígitos"
-                          }
-                          value={parsedPhone.digits}
-                          onChange={e =>
-                            setFormData({ ...formData, phone: parsedPhone.code + e.target.value.replace(/\D/g, "") })
-                          }
-                          maxLength={PHONE_CODES.find(p => p.code === parsedPhone.code)?.digits ?? 10}
-                          inputMode="numeric"
-                          className="flex-1"
-                        />
-                      </div>
+                      <PhoneField
+                        id="phone"
+                        value={formData.phone || ""}
+                        onChange={v => setFormData({ ...formData, phone: v })}
+                      />
                     </div>
                   </div>
 

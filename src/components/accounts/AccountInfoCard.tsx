@@ -15,6 +15,8 @@ import {
   ACCOUNT_TIERS, LIFECYCLE_STAGES, LEAD_SOURCES, labelOf,
 } from "@/lib/accountConstants";
 import { cn } from "@/lib/utils";
+import { PhoneField } from "@/components/forms/PhoneField";
+import { formatPhoneForDisplay } from "@/lib/phone";
 
 interface AccountInfoCardProps {
   account: Account;
@@ -91,7 +93,8 @@ export function AccountInfoCard({ account, canManage }: AccountInfoCardProps) {
     { label: "País", value: labelOf(COUNTRIES, account.country) },
     { label: "Ciudad", value: account.city || null },
     { label: "Tamaño", value: labelOf(EMPLOYEE_RANGES, account.employee_count) },
-    { label: "Teléfono", value: account.main_phone || null, href: account.main_phone ? `tel:${account.main_phone}` : null },
+    // Se muestra agrupado para leerlo, pero el enlace usa el número tal cual se guardó.
+    { label: "Teléfono", value: formatPhoneForDisplay(account.main_phone) || null, href: account.main_phone ? `tel:${account.main_phone}` : null },
     { label: "Email general", value: account.general_email || null, href: account.general_email ? `mailto:${account.general_email}` : null },
     { label: "Account Executives", value: aeSummary },
   ];
@@ -234,7 +237,7 @@ export function AccountInfoCard({ account, canManage }: AccountInfoCardProps) {
                 </Select>
               </Field>
               <Field label="Teléfono principal">
-                <Input placeholder="+52 55 1234 5678" value={form.main_phone || ""} onChange={e => set("main_phone", e.target.value)} />
+                <PhoneField value={form.main_phone || ""} onChange={v => set("main_phone", v)} />
               </Field>
               <Field label="Email general">
                 <Input type="email" placeholder="contacto@empresa.com" value={form.general_email || ""} onChange={e => set("general_email", e.target.value)} />

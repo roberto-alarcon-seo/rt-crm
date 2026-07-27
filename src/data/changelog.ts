@@ -44,6 +44,36 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.1",
+    date: "2026-07-27",
+    changes: [
+      {
+        type: "fix",
+        area: "Contactos",
+        description:
+          "Pegar un teléfono con espacios o guiones ya no recorta dígitos: antes \"55 1234 5678\" entraba como 8 dígitos en vez de 10.",
+      },
+      {
+        type: "improvement",
+        area: "Contactos",
+        description:
+          "El campo de teléfono ahora entiende el código de país al pegar (+52, 0052 o el \"1\" que agrega WhatsApp) y acomoda solo el selector de país.",
+      },
+      {
+        type: "improvement",
+        area: "Empresas",
+        description:
+          "El teléfono principal de la empresa pasó de texto libre a selector de país + número, con el mismo pegado tolerante que la ficha de contacto y aviso cuando faltan dígitos.",
+      },
+      {
+        type: "improvement",
+        area: "Empresas",
+        description:
+          "El teléfono de la empresa se muestra agrupado para leerlo de un vistazo (+52 55 1234 5678) sin cambiar el número que se marca al hacer clic.",
+      },
+    ],
+  },
+  {
     version: "1.5.0",
     date: "2026-07-22",
     headline: "Ficha de contacto renovada",

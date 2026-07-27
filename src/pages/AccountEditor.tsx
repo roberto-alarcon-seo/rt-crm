@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EditorSection as Section } from "@/components/forms/EditorSection";
+import { PhoneField } from "@/components/forms/PhoneField";
 import { Progress } from "@/components/ui/progress";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -433,11 +434,10 @@ export default function AccountEditor() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="main_phone">Teléfono principal</Label>
-                <Input
+                <PhoneField
                   id="main_phone"
-                  placeholder="+52 55 1234 5678"
                   value={formData.main_phone || ""}
-                  onChange={e => set("main_phone", e.target.value)}
+                  onChange={v => set("main_phone", v)}
                 />
               </div>
               <div className="space-y-2">
