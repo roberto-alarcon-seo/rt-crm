@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth, TenantRole } from '@/contexts/AuthContext';
 import { useSupportMode } from '@/contexts/SupportModeContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,7 +16,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireSuperAdmin = false,
   requireRoles,
 }) => {
-  const { user, isLoading, isSuperAdmin, tenantRole, profile, partnerScope } = useAuth();
+  const {
+    user, isLoading, isSuperAdmin, tenantRole, profile, partnerScope,
+    loadError, reloadUserData, signOut,
+  } = useAuth();
   const { isSupportMode } = useSupportMode();
   const location = useLocation();
   const isAdminImpersonation = typeof window !== 'undefined' && sessionStorage.getItem('noty5_admin_impersonation') === '1';
@@ -51,13 +55,27 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  // User is authenticated but doesn't have a profile yet (shouldn't happen but just in case)
+  // Autenticado pero sin perfil: la carga terminó mal (red, permisos o cuenta a
+  // medio configurar). Antes se quedaba girando para siempre; ahora se explica
+  // qué pasó y se ofrece salida, que es lo único que el usuario puede hacer.
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Configurando perfil...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="flex flex-col items-center gap-4 text-center max-w-md">
+          <AlertTriangle className="h-8 w-8 text-amber-500" />
+          <h1 className="text-lg font-semibold text-foreground">No pudimos abrir tu sesión</h1>
+          <p className="text-sm text-muted-foreground">
+            {loadError ?? 'No pudimos cargar tu perfil. Inténtalo de nuevo.'}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button onClick={reloadUserData}>
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+              Reintentar
+            </Button>
+            <Button variant="outline" onClick={() => { void signOut(); }}>
+              Cerrar sesión
+            </Button>
+          </div>
         </div>
       </div>
     );

@@ -50,3 +50,13 @@ supabase/.temp/
 # Video assets (binarios grandes, no van en git)
 *.mp4
 *.mov
+
+# Pruebas automatizadas (Playwright)
+# OJO: el patrón `*.local` de arriba NO cubre estos, porque terminan en .json.
+# Contienen tokens de sesión del usuario de prueba: nunca deben commitearse.
+.playwright-auth*.json
+playwright-report/
+test-results/
+# Snapshots y logs que deja el navegador controlado por el asistente.
+.playwright-mcp/
+.playwright-profile/

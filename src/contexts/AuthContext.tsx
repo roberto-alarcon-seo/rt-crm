@@ -63,13 +63,36 @@ interface AuthState {
   isSuperAdmin: boolean;
   tenantRole: TenantRole | null;
   partnerScope: string | null;
+  /** Mensaje para el usuario cuando no se pudo cargar su perfil. */
+  loadError: string | null;
 }
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (roles: TenantRole[]) => boolean;
+  /** Reintenta cargar perfil/rol/tenant (botón "Reintentar" de la pantalla de error). */
+  reloadUserData: () => void;
 }
+
+/** Sin esto, una petición que nunca responde deja la app en "Cargando…" para siempre. */
+const CARGA_TIMEOUT_MS = 15_000;
+const MAX_INTENTOS = 3;
+
+function conTimeout<T>(consulta: PromiseLike<T>, etiqueta: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const temporizador = setTimeout(
+      () => reject(new Error(`La consulta de ${etiqueta} tardó demasiado`)),
+      CARGA_TIMEOUT_MS,
+    );
+    Promise.resolve(consulta).then(
+      valor => { clearTimeout(temporizador); resolve(valor); },
+      error => { clearTimeout(temporizador); reject(error); },
+    );
+  });
+}
+
+const esperar = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -92,73 +115,95 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isSuperAdmin: false,
     tenantRole: null,
     partnerScope: null,
+    loadError: null,
   });
   // Prevents premature isLoading:false during token refresh:
   // onAuthStateChange can emit null session before getSession() resolves.
   const initialCheckDone = useRef(false);
+  // Quién está cargado ahora mismo. Sirve para distinguir un cambio real de
+  // usuario de un simple refresco de token (ver onAuthStateChange).
+  const loadedUserId = useRef<string | null>(null);
 
   const fetchUserData = useCallback(async (userId: string) => {
-    try {
-      // Fetch profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+    // Se reintenta ante fallos pasajeros (red, cold start). Lo que nunca hace
+    // esta función es terminar sin resolver el estado: o carga el perfil o deja
+    // un loadError. Si no, la app se queda en "Cargando…" para siempre.
+    for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+      try {
+        const { data: profile, error: profileError } = await conTimeout(
+          supabase.from('profiles').select('*').eq('id', userId).single(),
+          'perfil',
+        );
+        if (profileError) throw profileError;
 
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        return;
-      }
+        const { data: userRole, error: roleError } = await conTimeout(
+          supabase.from('user_roles').select('*').eq('user_id', userId).single(),
+          'permisos',
+        );
+        if (roleError) throw roleError;
 
-      // Fetch role
-      const { data: userRole, error: roleError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (roleError) {
-        console.error('Error fetching role:', roleError);
-        return;
-      }
-
-      // Fetch tenant if user has one
-      let tenant: Tenant | null = null;
-      if (profile?.tenant_id) {
-        const { data: tenantData, error: tenantError } = await supabase
-          .from('tenants')
-          .select('*')
-          .eq('id', profile.tenant_id)
-          .single();
-
-        if (!tenantError && tenantData) {
-          tenant = tenantData as Tenant;
+        // El tenant no es crítico para entrar: si falla, se sigue sin él.
+        let tenant: Tenant | null = null;
+        if (profile?.tenant_id) {
+          try {
+            const { data: tenantData, error: tenantError } = await conTimeout(
+              supabase.from('tenants').select('*').eq('id', profile.tenant_id).single(),
+              'empresa',
+            );
+            if (!tenantError && tenantData) tenant = tenantData as Tenant;
+          } catch (error) {
+            console.error('Error fetching tenant:', error);
+          }
         }
+
+        loadedUserId.current = userId;
+        setState(prev => ({
+          ...prev,
+          profile: profile as Profile,
+          userRole: userRole as UserRole,
+          tenant,
+          isSuperAdmin: userRole?.global_role === 'super_admin',
+          tenantRole: userRole?.tenant_role as TenantRole | null,
+          partnerScope: (userRole as any)?.partner_scope ?? null,
+          isLoading: false,
+          loadError: null,
+        }));
+
+        // Marca de último acceso: es telemetría, no debe demorar ni romper el login.
+        void supabase
+          .from('profiles')
+          .update({ last_login_at: new Date().toISOString() })
+          .eq('id', userId)
+          .then(({ error }) => {
+            if (error) console.error('Error updating last_login_at:', error);
+          });
+        return;
+      } catch (error) {
+        console.error(`Error in fetchUserData (intento ${intento}/${MAX_INTENTOS}):`, error);
+
+        // PGRST116 = la consulta no devolvió filas. Reintentar no va a crearlas.
+        const sinRegistro = (error as { code?: string })?.code === 'PGRST116';
+        if (sinRegistro || intento === MAX_INTENTOS) {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            loadError: sinRegistro
+              ? 'Tu cuenta no tiene un perfil configurado. Pide a un administrador que la revise.'
+              : 'No pudimos cargar tu sesión. Revisa tu conexión e inténtalo de nuevo.',
+          }));
+          return;
+        }
+        await esperar(intento * 500);
       }
-
-      setState(prev => ({
-        ...prev,
-        profile: profile as Profile,
-        userRole: userRole as UserRole,
-        tenant,
-        isSuperAdmin: userRole?.global_role === 'super_admin',
-        tenantRole: userRole?.tenant_role as TenantRole | null,
-        partnerScope: (userRole as any)?.partner_scope ?? null,
-        isLoading: false,
-      }));
-
-      // Update last_login_at
-      await supabase
-        .from('profiles')
-        .update({ last_login_at: new Date().toISOString() })
-        .eq('id', userId);
-
-    } catch (error) {
-      console.error('Error in fetchUserData:', error);
-      setState(prev => ({ ...prev, isLoading: false }));
     }
   }, []);
+
+  const reloadUserData = useCallback(() => {
+    const userId = state.user?.id;
+    if (!userId) return;
+    setState(prev => ({ ...prev, isLoading: true, loadError: null }));
+    void fetchUserData(userId);
+  }, [state.user?.id, fetchUserData]);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -167,6 +212,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // IMPORTANT: clear derived user data immediately to avoid rendering with stale profile/roles
         // (e.g. when a recovery link logs in a different user)
         if (session?.user) {
+          // Supabase emite TOKEN_REFRESHED / SIGNED_IN también cuando NO cambió el
+          // usuario: al refrescar el token solo (cada ~50 min) y al volver a la
+          // pestaña después de un rato. Si en esos casos limpiáramos el perfil y
+          // pusiéramos isLoading:true, ProtectedRoute mostraría el spinner y React
+          // desmontaría la pantalla entera — que es como se pierde lo que alguien
+          // está escribiendo en un formulario. Renovamos la sesión y nada más.
+          if (loadedUserId.current === session.user.id) {
+            setState(prev => ({ ...prev, session, user: session.user }));
+            return;
+          }
+
           setState(prev => ({
             ...prev,
             session,
@@ -178,6 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             tenantRole: null,
             partnerScope: null,
             isLoading: true,
+            loadError: null,
           }));
 
           // Defer Supabase calls with setTimeout to prevent deadlock
@@ -185,6 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             fetchUserData(session.user.id);
           }, 0);
         } else {
+          loadedUserId.current = null;
           setState(prev => ({
             ...prev,
             session,
@@ -195,6 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isSuperAdmin: false,
             tenantRole: null,
             partnerScope: null,
+            loadError: null,
             // Keep isLoading:true until getSession() confirms there's no session.
             // Without this guard, a transient null during token refresh causes
             // ProtectedRoute to render <Navigate> and enter an infinite loop.
@@ -240,6 +299,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Sign out error (session may already be invalidated):', error);
     }
     // Always clear local state regardless of signOut result
+    loadedUserId.current = null;
     setState({
       user: null,
       session: null,
@@ -250,6 +310,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isSuperAdmin: false,
       tenantRole: null,
       partnerScope: null,
+      loadError: null,
     });
   };
 
@@ -266,6 +327,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signOut,
         hasRole,
+        reloadUserData,
       }}
     >
       {children}

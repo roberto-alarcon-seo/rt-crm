@@ -44,6 +44,24 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.2",
+    date: "2026-07-27",
+    changes: [
+      {
+        type: "fix",
+        area: "General",
+        description:
+          "Cambiar de pestaña o de ventana y volver ya no reinicia la pantalla: lo que estabas escribiendo en un formulario se conserva. Pasaba cada vez que la sesión renovaba su token, más o menos una vez por hora.",
+      },
+      {
+        type: "fix",
+        area: "General",
+        description:
+          "Si falla la conexión al entrar, la app ya no se queda en \"Cargando…\" para siempre: reintenta sola ante un corte pasajero y, si no lo logra, explica qué pasó y ofrece reintentar o cerrar sesión.",
+      },
+    ],
+  },
+  {
     version: "1.5.1",
     date: "2026-07-27",
     changes: [
