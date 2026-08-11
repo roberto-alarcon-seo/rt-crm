@@ -7,7 +7,7 @@ Este documento es para **revisar en pantalla** que lo que pedía el documento de
 
 ## Antes de empezar
 
-1. Entra al CRM y mira la **barra lateral, abajo**: debe decir **`v1.10.1 · 2026-08-11`**.
+1. Entra a **https://cem.randomtruffle.com** y mira la **barra lateral, abajo**: debe decir **`v1.10.1 · 2026-08-11`**.
 2. Si dice `v1.5.2`, la app es una PWA y tu navegador tiene guardada la versión anterior: haz **Ctrl+Shift+R** (o cierra y vuelve a abrir la pestaña).
 3. Las rutas se escriben después del dominio. Ejemplo: `/settings/ai-config`.
 4. Varias pantallas de configuración piden rol **Administrador**.
@@ -70,6 +70,7 @@ Este documento es para **revisar en pantalla** que lo que pedía el documento de
 | ☐ | Contenido cargado | **49 entradas activas**: las 47 del documento más 2 que el equipo ya había escrito (ver *Decisiones pendientes*) |
 | ☐ | Tono de la entrada de la DAM | En **Prism**, la respuesta activa sobre Google Drive / SharePoint dice que *"son excelentes para archivos"*. La versión anterior, que llamaba a Drive "un cementerio de archivos", quedó **desactivada** · §0.5 |
 | ☐ | Tono de la entrada de Radian | La respuesta activa sobre PMax / Advantage+ dice que *"no ven lo que pasa afuera"*. La anterior, que afirmaba que *"Meta va a querer que gastes todo en Meta"*, quedó **desactivada** · §0.5 |
+| ☐ | Cómo se ven las desactivadas | Siguen listadas pero **atenuadas** y con su interruptor en gris; el encabezado dice **49 activas** de 51. El agente solo usa las activas |
 | ☐ | Tipos de entrada | Se distinguen **Info** y **Q&A** · §6 |
 
 ## 6. Widget Web — `/settings/widget`
@@ -131,7 +132,7 @@ Este documento es para **revisar en pantalla** que lo que pedía el documento de
 | ☐ | Qué revisar | Ruta | Respuesta esperada |
 |---|---|---|---|
 | ☐ | Pantalla de acceso | cerrar sesión | Ya **no** dice "CRM Inmobiliario Enterprise" ni muestra un testimonial de MLS LATAM · §0.4 |
-| ☐ | Nombre del rol | `/settings/team` | El rol se llama **Comercial**, no "Asesor" · §0.4 |
+| ☐ | Nombre del rol | `/settings/team` → abre el selector de rol al invitar o editar a alguien | La opción se llama **Comercial**, no "Asesor". Hoy los 5 usuarios de producción son administradores, así que la etiqueta solo se ve al abrir el selector · §0.4 |
 | ☐ | Columnas y filtros | `/contacts` y `/events` | La columna dice **Comercial** · §0.4 |
 | ☐ | Novedades | `/changelog` | Las versiones 1.5.3 a 1.10.1 con el detalle de todo lo aplicado |
 
@@ -155,12 +156,14 @@ Este documento es para **revisar en pantalla** que lo que pedía el documento de
 
 2. **Cuándo encender los agentes.** El Agente IA General y el widget están **activos**. El **Agente SDR** y el **Agente de Oportunidades** están **apagados** a propósito: en cuanto se encienda el de Oportunidades empezará a crear recordatorios y a recalcular probabilidades sobre las oportunidades reales.
 
-3. **Dominio del CRM.** La configuración apunta a `crm.randomtruffle.com`, que hoy no existe en DNS. No rompe nada porque el sistema recae en la marca de Random Truffle por defecto, pero conviene registrar el dominio real.
+3. **La columna "País" aparece dos veces en `/contacts`.** El contacto ya tenía un campo de país de texto libre, y el §7.1 pedía un "País" como lista, así que ahora hay dos columnas con el mismo nombre. Conviene decidir cuál se queda: ocultar el campo personalizado del listado, o dejar de usar el de texto libre.
+
+4. **Dominio del CRM.** La configuración de la marca apunta a `crm.randomtruffle.com`, pero el CRM vive en **`cem.randomtruffle.com`**. No rompe nada porque el sistema recae en la marca de Random Truffle por defecto, pero conviene corregirlo para que la resolución por dominio funcione como está diseñada.
 
 ## Cómo se verificó
 
 - **Base de datos y funciones de servidor:** 44 comprobaciones automáticas contra producción (43 correctas; la restante fue el conteo de entradas de la Base de Conocimiento, que salió más alto de lo esperado por el contenido previo del equipo — de ahí salió el hallazgo del §0.5).
 - **Comportamiento real en producción:** calificación de un lead de prueba, una pasada controlada del Agente de Oportunidades, el bloqueo por consentimiento, y una conversación real contra el widget público. Todos los datos de prueba se borraron: producción quedó con sus 227 contactos y 224 oportunidades originales.
-- **Pantallas:** verificadas en el ambiente de desarrollo con el mismo código que ahora está en producción. Este checklist sirve para confirmarlas en producción.
+- **Pantallas:** recorridas en **producción** el 11 de agosto sobre `cem.randomtruffle.com` con la versión 1.10.1: Pipelines (13 etapas, sin errores de consola), Agente de Seguimiento (cadencia en días y franja 9–19), Agente SDR (pesos 20/20/20/15/15/10, suma 100/100, umbral 70, los 8 productos con sus descripciones), Consentimiento (palabras de baja, texto legal y el probador con los dos casos), Asignación de leads (sin vocabulario inmobiliario, tope 25), Base de Conocimiento (10 colecciones, sin "Prisim", 49 activas), Widget (Ruffle y los 4 productos) y la ficha de contacto (razón del score y los 10 campos por categoría). Todo en modo lectura: no se guardó ningún cambio.
 - **Automatizado:** 53 pruebas unitarias, revisión de tipos y compilación de producción, todo en verde.
 - Se dejó un respaldo previo al despliegue en el esquema `backup_setup_20260811`; se puede borrar cuando el equipo esté conforme.
