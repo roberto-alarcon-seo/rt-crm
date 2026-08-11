@@ -44,6 +44,18 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.1",
+    date: "2026-08-11",
+    changes: [
+      {
+        type: "fix",
+        area: "Pipelines",
+        description:
+          "La pantalla de Pipelines dejó de colgarse al abrirla: entraba en un ciclo de renderizado infinito al cargar las etapas.",
+      },
+    ],
+  },
+  {
     version: "1.10.0",
     date: "2026-08-11",
     headline: "El CRM ya habla como un CRM comercial",

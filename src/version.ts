@@ -5,5 +5,5 @@
 //
 // OJO: junto con este archivo hay que agregar la entrada de la versión en
 // src/data/changelog.ts. `npm test` falla si ambos no coinciden.
-export const APP_VERSION = "1.10.0";
+export const APP_VERSION = "1.10.1";
 export const APP_BUILD_DATE = "2026-08-11";

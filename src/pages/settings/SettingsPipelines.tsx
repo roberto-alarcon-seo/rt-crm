@@ -159,7 +159,19 @@ function StagesEditor({ pipeline }: { pipeline: Pipeline }) {
   const archiveP = useArchivePipeline();
   const [order, setOrder] = useState<string[]>([]);
 
-  useEffect(() => { setOrder(stages.map((s) => s.id)); }, [stages]);
+  // El efecto dependía del arreglo `stages` por identidad. Como el hook usa un
+  // default `= []`, cada render creaba un arreglo nuevo, el efecto volvía a
+  // correr, setOrder provocaba otro render y el ciclo se repetía: React acababa
+  // lanzando "Maximum update depth exceeded" y la pantalla se colgaba.
+  // Se depende de la lista de ids serializada, que sí es estable.
+  const stageIdsKey = stages.map((s) => s.id).join(',');
+  useEffect(() => {
+    setOrder((prev) => {
+      const next = stageIdsKey ? stageIdsKey.split(',') : [];
+      // Evita un render extra cuando el orden ya es el mismo.
+      return prev.length === next.length && prev.every((id, i) => id === next[i]) ? prev : next;
+    });
+  }, [stageIdsKey]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
