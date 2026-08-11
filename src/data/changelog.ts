@@ -44,6 +44,55 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.7.0",
+    date: "2026-08-11",
+    headline: "Los loops del pipeline ya se ejecutan",
+    changes: [
+      {
+        type: "fix",
+        area: "Agente de Oportunidades",
+        description:
+          "La pantalla del Agente de Oportunidades ya guarda, y sus cuatro loops ya se ejecutan de verdad. Antes los switches eran decorativos: encenderlos no tenía ningún efecto.",
+      },
+      {
+        type: "feature",
+        area: "Agente de Oportunidades",
+        description:
+          "Recordatorio de propuesta: cuando una oportunidad entra a la etapa de propuesta, el agente crea un recordatorio cada 3 días hasta que haya respuesta o se marque como perdida.",
+      },
+      {
+        type: "feature",
+        area: "Agente de Oportunidades",
+        description:
+          "Alerta de estancamiento: si una oportunidad no cambia de etapa en el plazo configurado se avisa, y la alerta se rearma al moverla.",
+      },
+      {
+        type: "feature",
+        area: "Agente de Oportunidades",
+        description:
+          "La probabilidad de cierre se recalcula sola a partir de la etapa y del tiempo estancada, así el forecast deja de quedarse congelado.",
+      },
+      {
+        type: "feature",
+        area: "Agente de Seguimiento",
+        description:
+          "La cadencia de recordatorios ya se puede definir en días (2, 5, 12…), no solo en horas. Cada paso que cae fuera de la ventana de 24 h de WhatsApp pide su plantilla aprobada, y la pantalla avisa si falta.",
+      },
+      {
+        type: "feature",
+        area: "Agente de Seguimiento",
+        description:
+          "Franja de envío configurable en la hora local del lead (por omisión 9:00–19:00): fuera de ella el recordatorio se posterga en lugar de llegar de madrugada.",
+      },
+      {
+        type: "fix",
+        area: "General",
+        description:
+          "Las tareas programadas del sistema apuntaban a un proyecto equivocado, así que el Agente de Seguimiento, el de citas y la sincronización de plantillas no corrían. Ya se ejecutan contra los datos propios.",
+      },
+    ],
+  },
+  {
     version: "1.6.0",
     date: "2026-08-11",
     headline: "El Agente SDR ya funciona de verdad",

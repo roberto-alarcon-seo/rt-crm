@@ -5672,6 +5672,59 @@ export type Database = {
           },
         ]
       }
+      tenant_opportunity_settings: {
+        Row: {
+          alert_after_days: number
+          created_at: string
+          enabled: boolean
+          id: string
+          loop_followup_enabled: boolean
+          loop_probability_update_enabled: boolean
+          loop_proposal_reminder_enabled: boolean
+          loop_stall_alert_enabled: boolean
+          proposal_reminder_days: number
+          stale_after_days: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          alert_after_days?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          loop_followup_enabled?: boolean
+          loop_probability_update_enabled?: boolean
+          loop_proposal_reminder_enabled?: boolean
+          loop_stall_alert_enabled?: boolean
+          proposal_reminder_days?: number
+          stale_after_days?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          alert_after_days?: number
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          loop_followup_enabled?: boolean
+          loop_probability_update_enabled?: boolean
+          loop_proposal_reminder_enabled?: boolean
+          loop_stall_alert_enabled?: boolean
+          proposal_reminder_days?: number
+          stale_after_days?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_opportunity_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_sdr_settings: {
         Row: {
           created_at: string

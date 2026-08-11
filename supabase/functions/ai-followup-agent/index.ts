@@ -11,6 +11,69 @@ const REGIONAL_CONTEXT: Record<string, string> = {
   ES: `Vocabulario español: usa "piso", "aparcamiento", "alquiler", "urbanización", "comunidad de propietarios". Tratamiento formal con "usted".`,
 };
 
+// ── Cadencia larga y franja de envío ─────────────────────────────────────────
+//
+// Hasta ahora este agente solo operaba dentro de la ventana de 24 h de WhatsApp,
+// donde se puede enviar texto libre. La cadencia comercial del §4.2 (día 2, 5 y
+// 12) cae fuera de esa ventana, y ahí Meta exige plantilla aprobada. Por eso un
+// paso con delay > 24 h SOLO se envía si tiene `template_name`; si no lo tiene se
+// omite y se avisa en el log, en lugar de intentar un envío que Twilio rechaza.
+
+const FREE_FORM_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Offset UTC aproximado por país, para respetar la franja de envío en la hora
+ * local DEL LEAD. Es una aproximación deliberada: basta para no escribirle a
+ * nadie de madrugada, y evita arrastrar una librería de zonas horarias a la
+ * edge function. Sin país conocido se usa el horario del tenant.
+ */
+const COUNTRY_UTC_OFFSET: Record<string, number> = {
+  MX: -6, GT: -6, SV: -6, HN: -6, NI: -6, CR: -6, BZ: -6,
+  PA: -5, CO: -5, PE: -5, EC: -5,
+  BO: -4, VE: -4, CL: -4, PY: -4, DO: -4, PR: -4,
+  AR: -3, UY: -3, BR: -3,
+  US: -6, CA: -6,
+  ES: 1,
+};
+
+/** Normaliza "México", "mx", "MX" → código ISO de dos letras conocido. */
+const COUNTRY_ALIASES: Record<string, string> = {
+  'mexico': 'MX', 'méxico': 'MX', 'mx': 'MX',
+  'colombia': 'CO', 'co': 'CO',
+  'chile': 'CL', 'cl': 'CL',
+  'argentina': 'AR', 'ar': 'AR',
+  'peru': 'PE', 'perú': 'PE', 'pe': 'PE',
+  'estados unidos': 'US', 'usa': 'US', 'us': 'US',
+  'españa': 'ES', 'espana': 'ES', 'es': 'ES',
+};
+
+function resolveCountryCode(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const key = raw.trim().toLowerCase();
+  if (COUNTRY_ALIASES[key]) return COUNTRY_ALIASES[key];
+  const upper = raw.trim().toUpperCase();
+  return COUNTRY_UTC_OFFSET[upper] !== undefined ? upper : null;
+}
+
+/**
+ * ¿Estamos dentro de la franja de envío en la hora local del lead?
+ * Si no se conoce el país del lead cae al offset del tenant, y si tampoco hay,
+ * no bloquea (mismo comportamiento que antes de existir esta franja).
+ */
+function isWithinSendWindow(
+  now: Date,
+  leadCountry: string | null,
+  tenantCountry: string | null,
+  startHour: number,
+  endHour: number,
+): { ok: boolean; localHour: number | null } {
+  const code = resolveCountryCode(leadCountry) ?? resolveCountryCode(tenantCountry);
+  if (!code) return { ok: true, localHour: null };
+  const offset = COUNTRY_UTC_OFFSET[code];
+  const localHour = (((now.getUTCHours() + offset) % 24) + 24) % 24;
+  return { ok: localHour >= startHour && localHour < endHour, localHour };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -61,15 +124,40 @@ serve(async (req) => {
       const enableVenta: boolean = ts.enable_venta ?? true;
 
       // Resolve schedule — fall back to legacy delay_minutes/max_followups if new field not set
-      const schedule: Array<{ delay_minutes: number }> = Array.isArray(ts.followup_schedule) && ts.followup_schedule.length > 0
-        ? ts.followup_schedule
-        : Array.from({ length: ts.max_followups ?? 2 }, () => ({ delay_minutes: ts.delay_minutes ?? 30 }));
+      const schedule: Array<{ delay_minutes: number; template_name?: string | null }> =
+        Array.isArray(ts.followup_schedule) && ts.followup_schedule.length > 0
+          ? ts.followup_schedule
+          : Array.from({ length: ts.max_followups ?? 2 }, () => ({ delay_minutes: ts.delay_minutes ?? 30 }));
 
       const maxFollowups = schedule.length;
+      const sendWindowStart: number = ts.send_window_start_hour ?? 9;
+      const sendWindowEnd: number = ts.send_window_end_hour ?? 19;
 
       // Use the smallest delay in the schedule as the DB pre-filter (conservative)
       const minDelayMs = Math.min(...schedule.map((s: any) => s.delay_minutes)) * 60 * 1000;
       const cutoff = new Date(now.getTime() - minDelayMs).toISOString();
+
+      // El límite inferior de la búsqueda: antes era fijo en 24 h, lo que hacía
+      // imposible cualquier paso más largo. Ahora se abre hasta el paso más
+      // lejano de la cadencia (más un día de margen), pero cada paso individual
+      // sigue respetando la regla de la ventana libre: si excede 24 h necesita
+      // plantilla aprobada, y si no la tiene no se envía.
+      const maxDelayMs = Math.max(...schedule.map((s: any) => s.delay_minutes)) * 60 * 1000;
+      const searchFloor = new Date(
+        now.getTime() - Math.max(FREE_FORM_WINDOW_MS, maxDelayMs + FREE_FORM_WINDOW_MS),
+      ).toISOString();
+
+      // Se carga antes del filtro porque la franja de envío necesita el país del
+      // tenant como respaldo cuando el lead no tiene país registrado.
+      const { data: aiSettings } = await supabase
+        .from('tenant_ai_settings' as any)
+        .select('region_code, language, formality, agent_name')
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      const regionCode: string = (aiSettings as any)?.region_code ?? 'MX';
+      const tenantCountry: string | null = regionCode;
+      const regionContext = REGIONAL_CONTEXT[regionCode] ?? REGIONAL_CONTEXT['MX'];
 
       // ── 2. Find eligible conversations ─────────────────────────────────────
       const { data: conversations, error: convErr } = await supabase
@@ -78,14 +166,14 @@ serve(async (req) => {
           id, customer_whatsapp, twilio_whatsapp_number,
           twilio_subaccount_sid, followup_count, last_followup_at,
           last_customer_message_at, ai_state, needs_human,
-          contact:contacts(id, name, pipeline_type, pipeline_stage)
+          contact:contacts(id, name, pipeline_type, pipeline_stage, country)
         `)
         .eq('tenant_id', tenantId)
         .eq('status', 'open')
         .eq('ai_state', 'active')
         .eq('needs_human', false)
         .lt('last_customer_message_at', cutoff)
-        .gt('last_customer_message_at', window24h);
+        .gt('last_customer_message_at', searchFloor);
 
       if (convErr) {
         console.error(`❌ Error fetching conversations for tenant ${tenantId}:`, convErr);
@@ -107,7 +195,27 @@ serve(async (req) => {
         const step = c.followup_count ?? 0;
         if (step >= maxFollowups) return false; // all steps exhausted
 
-        const stepDelay = (schedule[step]?.delay_minutes ?? 30) * 60 * 1000;
+        const stepConfig = schedule[step] ?? { delay_minutes: 30 };
+        const stepDelay = (stepConfig.delay_minutes ?? 30) * 60 * 1000;
+
+        // ¿Este envío cae dentro de la ventana de mensaje libre de WhatsApp?
+        const sinceCustomer = now.getTime() - new Date(c.last_customer_message_at).getTime();
+        const needsTemplate = sinceCustomer >= FREE_FORM_WINDOW_MS;
+        if (needsTemplate && !stepConfig.template_name) {
+          console.log(
+            `⏭️  conv ${c.id}: el paso ${step + 1} cae fuera de la ventana de 24 h y no tiene plantilla configurada — se omite`,
+          );
+          return false;
+        }
+
+        // Franja de envío en la hora local del lead (§4.2: 9–19).
+        const window = isWithinSendWindow(now, c.contact?.country ?? null, tenantCountry, sendWindowStart, sendWindowEnd);
+        if (!window.ok) {
+          console.log(
+            `🌙 conv ${c.id}: son las ${window.localHour}h en el país del lead, fuera de la franja ${sendWindowStart}–${sendWindowEnd} — se posterga`,
+          );
+          return false;
+        }
 
         if (step === 0) {
           // First follow-up: delay relative to last customer message
@@ -149,18 +257,9 @@ serve(async (req) => {
 
       console.log(`📬 ${eligible.length} conversation(s) eligible for follow-up in tenant ${tenantId}`);
 
-      // ── 3. Load AI settings for regional context ────────────────────────────
-      const { data: aiSettings } = await supabase
-        .from('tenant_ai_settings' as any)
-        .select('region_code, language, formality, agent_name')
-        .eq('tenant_id', tenantId)
-        .maybeSingle();
-
-      const regionCode: string = (aiSettings as any)?.region_code ?? 'MX';
       const language: string = (aiSettings as any)?.language ?? 'es';
       const formality: string = (aiSettings as any)?.formality ?? 'balanced';
       const agentName: string = (aiSettings as any)?.agent_name ?? 'Sofía';
-      const regionContext = REGIONAL_CONTEXT[regionCode] ?? REGIONAL_CONTEXT['MX'];
 
       const formalityNote =
         formality === 'formal' ? 'Usa un tono formal con "usted".' :
@@ -207,6 +306,13 @@ serve(async (req) => {
           const contactName: string | null = conv.contact?.name ?? null;
           const currentFollowupCount: number = conv.followup_count ?? 0;
 
+          // Paso de la cadencia que toca ahora y si debe ir por plantilla.
+          const stepConfig = schedule[currentFollowupCount] ?? { delay_minutes: 30 };
+          const outsideFreeFormWindow =
+            now.getTime() - new Date(conv.last_customer_message_at).getTime() >= FREE_FORM_WINDOW_MS;
+          const templateName: string | null =
+            outsideFreeFormWindow ? (stepConfig.template_name ?? null) : null;
+
           // Load last 12 messages for context
           const { data: messages } = await supabase
             .from('messages')
@@ -251,36 +357,71 @@ ${contactName ? `- Puedes mencionar "${contactName}" al inicio si es natural, pe
 ${afterAllHint}
 - Sé breve, humano y genuino.`;
 
-          // ── Call OpenRouter ───────────────────────────────────────────────
-          const llmRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${openrouterKey}`,
-              'HTTP-Referer': supabaseUrl,
-            },
-            body: JSON.stringify({
-              model: 'google/gemini-2.5-flash',
-              messages: [{ role: 'user', content: systemPrompt }],
-              max_tokens: 200,
-              temperature: 0.7,
-            }),
-          });
+          // ── Redactar el mensaje ───────────────────────────────────────────
+          // Fuera de la ventana de 24 h el texto no lo escribe el modelo: se usa
+          // la plantilla aprobada, porque es lo único que Meta deja enviar. El
+          // cuerpo se guarda con las variables ya resueltas para que el Inbox
+          // muestre lo que el cliente realmente recibió.
+          let followupMessage: string;
+          let templateRow: Record<string, unknown> | null = null;
+          const templateVariables: Record<string, string> = {
+            nombre: contactName ?? '',
+            empresa: (aiSettings as any)?.company_name ?? '',
+            comercial: agentName,
+            agente: agentName,
+          };
 
-          if (!llmRes.ok) {
-            console.error(`❌ OpenRouter error for conv ${convId}:`, await llmRes.text());
-            continue;
+          if (templateName) {
+            const { data: tpl } = await supabase
+              .from('templates')
+              .select('id, name, body, twilio_template_sid, variable_index_map, variables, approval_status')
+              .eq('tenant_id', tenantId)
+              .eq('name', templateName)
+              .maybeSingle();
+
+            if (!tpl || tpl.approval_status !== 'approved' || !tpl.twilio_template_sid) {
+              console.error(
+                `❌ conv ${convId}: la plantilla "${templateName}" no existe o no está aprobada en Meta — no se envía`,
+              );
+              continue;
+            }
+            templateRow = tpl as Record<string, unknown>;
+            followupMessage = String(tpl.body ?? '').replace(
+              /\{\{([^}]+)\}\}/g,
+              (_m, key) => templateVariables[String(key).trim()] ?? '',
+            );
+            console.log(`📄 Follow-up por plantilla "${templateName}" para ${convId}`);
+          } else {
+            const llmRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${openrouterKey}`,
+                'HTTP-Referer': supabaseUrl,
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.5-flash',
+                messages: [{ role: 'user', content: systemPrompt }],
+                max_tokens: 200,
+                temperature: 0.7,
+              }),
+            });
+
+            if (!llmRes.ok) {
+              console.error(`❌ OpenRouter error for conv ${convId}:`, await llmRes.text());
+              continue;
+            }
+
+            const llmJson = await llmRes.json();
+            const generated: string = llmJson.choices?.[0]?.message?.content?.trim();
+
+            if (!generated) {
+              console.error(`❌ Empty LLM response for conv ${convId}`);
+              continue;
+            }
+            followupMessage = generated;
+            console.log(`✍️  Follow-up for ${convId}: "${followupMessage.substring(0, 60)}..."`);
           }
-
-          const llmJson = await llmRes.json();
-          const followupMessage: string = llmJson.choices?.[0]?.message?.content?.trim();
-
-          if (!followupMessage) {
-            console.error(`❌ Empty LLM response for conv ${convId}`);
-            continue;
-          }
-
-          console.log(`✍️  Follow-up for ${convId}: "${followupMessage.substring(0, 60)}..."`);
 
           // ── Insert message record ─────────────────────────────────────────
           const { data: msgRecord, error: msgErr } = await supabase
@@ -331,7 +472,24 @@ ${afterAllHint}
           const formData = new URLSearchParams();
           formData.append('From', `whatsapp:${businessPhone}`);
           formData.append('To', `whatsapp:${customerPhone}`);
-          formData.append('Body', followupMessage);
+
+          if (templateRow) {
+            // Fuera de la ventana de 24 h Twilio solo acepta ContentSid. El orden
+            // de las variables sale de variable_index_map, que es el mapeo con el
+            // que Meta aprobó la plantilla — re-derivarlo del arreglo `variables`
+            // arriesga meter los valores en los huecos equivocados.
+            formData.append('ContentSid', String(templateRow.twilio_template_sid));
+            const indexMap = (templateRow.variable_index_map ?? {}) as Record<string, number>;
+            const contentVariables: Record<string, string> = {};
+            for (const [name, idx] of Object.entries(indexMap)) {
+              contentVariables[String(idx)] = templateVariables[name] ?? '';
+            }
+            if (Object.keys(contentVariables).length > 0) {
+              formData.append('ContentVariables', JSON.stringify(contentVariables));
+            }
+          } else {
+            formData.append('Body', followupMessage);
+          }
 
           const twilioRes = await fetch(twilioUrl, {
             method: 'POST',

@@ -14,7 +14,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveTenantId } from '@/hooks/useEffectiveTenantId';
 import {
@@ -24,6 +29,8 @@ import {
   STYLE_OPTIONS,
   DELAY_PRESETS,
   formatDelay,
+  stepNeedsTemplate,
+  invalidSteps,
   type FollowupSettings,
   type FollowupStyle,
   type FollowupStep,
@@ -124,10 +131,13 @@ function StyleCard({
 // ── Step editor ───────────────────────────────────────────────────────────────
 
 function StepRow({
-  step, index, total, onChange, onRemove,
+  step, index, total, onChange, onChangeTemplate, onRemove, approvedTemplates,
 }: {
   step: FollowupStep; index: number; total: number;
-  onChange: (delay: number) => void; onRemove: () => void;
+  onChange: (delay: number) => void;
+  onChangeTemplate: (templateName: string | null) => void;
+  onRemove: () => void;
+  approvedTemplates: { name: string; display_name: string | null }[];
 }) {
   const isFirst = index === 0;
   const relativeLabel = isFirst
@@ -179,6 +189,46 @@ function StepRow({
             </button>
           )}
         </div>
+
+        {/* Pasados los 24 h de la ventana de WhatsApp solo se puede enviar una
+            plantilla aprobada por Meta: aquí se elige cuál. */}
+        {stepNeedsTemplate(step) && (
+          <div className="mt-3 space-y-1.5">
+            <Label className="text-xs">
+              Plantilla de WhatsApp
+              <span className="text-destructive ml-1">*</span>
+            </Label>
+            <Select
+              value={step.template_name ?? ''}
+              onValueChange={(v) => onChangeTemplate(v || null)}
+            >
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Elige una plantilla aprobada" />
+              </SelectTrigger>
+              <SelectContent>
+                {approvedTemplates.length === 0 && (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    No hay plantillas aprobadas todavía
+                  </div>
+                )}
+                {approvedTemplates.map((t) => (
+                  <SelectItem key={t.name} value={t.name}>
+                    {t.display_name || t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!step.template_name ? (
+              <p className="text-xs text-destructive">
+                Este recordatorio cae fuera de la ventana de 24 h de WhatsApp. Sin plantilla aprobada no se enviará.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Fuera de la ventana de 24 h, Meta solo permite plantillas aprobadas.
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -509,7 +559,18 @@ export default function SettingsFollowupAgent() {
 
   function updateStep(index: number, delay: number) {
     const next = form.followup_schedule.map((s, i) =>
-      i === index ? { ...s, delay_minutes: delay } : s
+      // Al bajar el paso de nuevo dentro de la ventana de 24 h la plantilla deja
+      // de aplicar: se limpia para no dejar configuración muerta.
+      i === index
+        ? { ...s, delay_minutes: delay, template_name: delay > 1440 ? s.template_name ?? null : null }
+        : s
+    );
+    patch('followup_schedule', next);
+  }
+
+  function updateStepTemplate(index: number, templateName: string | null) {
+    const next = form.followup_schedule.map((s, i) =>
+      i === index ? { ...s, template_name: templateName } : s
     );
     patch('followup_schedule', next);
   }
@@ -517,8 +578,9 @@ export default function SettingsFollowupAgent() {
   function addStep() {
     if (form.followup_schedule.length >= 5) return;
     const last = form.followup_schedule[form.followup_schedule.length - 1];
-    const nextDelay = last ? Math.min(last.delay_minutes * 2, 1440) : 60;
-    patch('followup_schedule', [...form.followup_schedule, { delay_minutes: nextDelay }]);
+    // El tope ya no es 24 h: la cadencia comercial se mide en días (§4.2).
+    const nextDelay = last ? Math.min(last.delay_minutes * 2, 43200) : 60;
+    patch('followup_schedule', [...form.followup_schedule, { delay_minutes: nextDelay, template_name: null }]);
   }
 
   function removeStep(index: number) {
@@ -526,7 +588,36 @@ export default function SettingsFollowupAgent() {
     patch('followup_schedule', form.followup_schedule.filter((_, i) => i !== index));
   }
 
-  function handleSave() { save(form); setDirty(false); }
+  /** Plantillas aprobadas por Meta: las únicas enviables fuera de la ventana. */
+  const tenantId = useEffectiveTenantId();
+  const { data: approvedTemplates = [] } = useQuery({
+    queryKey: ['approved-templates', tenantId],
+    queryFn: async () => {
+      if (!tenantId) return [];
+      const { data, error } = await supabase
+        .from('templates')
+        .select('name, display_name')
+        .eq('tenant_id', tenantId)
+        .eq('approval_status', 'approved')
+        .order('display_name');
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!tenantId,
+  });
+
+  const badSteps = invalidSteps(form.followup_schedule);
+
+  function handleSave() {
+    // La BD rechaza una franja invertida; se avisa antes para no mostrar un
+    // error de constraint al usuario.
+    if (form.send_window_end_hour <= form.send_window_start_hour) {
+      toast.error('La hora final de la franja de envío debe ser mayor que la inicial');
+      return;
+    }
+    save(form);
+    setDirty(false);
+  }
 
   if (isLoading) {
     return (
@@ -636,10 +727,20 @@ export default function SettingsFollowupAgent() {
                       index={i}
                       total={form.followup_schedule.length}
                       onChange={(d) => updateStep(i, d)}
+                      onChangeTemplate={(t) => updateStepTemplate(i, t)}
                       onRemove={() => removeStep(i)}
+                      approvedTemplates={approvedTemplates}
                     />
                   ))}
                 </div>
+
+                {badSteps.length > 0 && (
+                  <p className="text-xs text-destructive mt-2">
+                    {badSteps.length === 1
+                      ? `El recordatorio ${badSteps[0] + 1} no se enviará: está fuera de la ventana de 24 h y le falta plantilla.`
+                      : `Los recordatorios ${badSteps.map((i) => i + 1).join(', ')} no se enviarán: están fuera de la ventana de 24 h y les falta plantilla.`}
+                  </p>
+                )}
 
                 {form.followup_schedule.length < 5 && (
                   <Button
@@ -654,6 +755,61 @@ export default function SettingsFollowupAgent() {
                       ({form.followup_schedule.length}/5)
                     </span>
                   </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Franja de envío
+                </CardTitle>
+                <CardDescription>
+                  Los recordatorios solo salen dentro de esta franja, en la hora local del lead.
+                  Fuera de ella se posterga el envío hasta la siguiente ventana.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="send_window_start_hour" className="text-xs">Desde</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        id="send_window_start_hour"
+                        type="number"
+                        min={0}
+                        max={23}
+                        className="w-16 h-8"
+                        value={form.send_window_start_hour}
+                        onChange={(e) => patch('send_window_start_hour', Math.max(0, Math.min(23, Number(e.target.value) || 0)))}
+                      />
+                      <span className="text-xs text-muted-foreground">h</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="send_window_end_hour" className="text-xs">Hasta</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        id="send_window_end_hour"
+                        type="number"
+                        min={1}
+                        max={24}
+                        className="w-16 h-8"
+                        value={form.send_window_end_hour}
+                        onChange={(e) => patch('send_window_end_hour', Math.max(1, Math.min(24, Number(e.target.value) || 1)))}
+                      />
+                      <span className="text-xs text-muted-foreground">h</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground pb-2">
+                    Se usa el país del contacto; si no lo tiene, el del tenant.
+                  </p>
+                </div>
+                {form.send_window_end_hour <= form.send_window_start_hour && (
+                  <p className="text-xs text-destructive mt-2">
+                    La hora final debe ser mayor que la inicial.
+                  </p>
                 )}
               </CardContent>
             </Card>
