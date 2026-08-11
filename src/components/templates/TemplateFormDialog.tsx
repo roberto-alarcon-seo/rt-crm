@@ -38,15 +38,18 @@ const categories = [
   { value: 'authentication', label: 'Authentication' },
 ];
 
+/**
+ * Etiquetas funcionales. Deben coincidir con LABEL_GROUPS de la pantalla de
+ * plantillas: antes eran otras (Onboarding, Cobranza, Promoción…), así que toda
+ * plantilla creada desde aquí caía en "Sin grupo" y los cinco grupos de la lista
+ * quedaban permanentemente vacíos.
+ */
 const labels = [
-  'Onboarding',
-  'Cobranza',
-  'Promoción',
-  'Servicio',
-  'E-commerce',
-  'Feedback',
-  'Alertas',
-  'Recordatorio',
+  'Bienvenida',
+  'Seguimiento',
+  'Citas',
+  'Documentación',
+  'Post-venta',
 ];
 
 const headerTypes = [

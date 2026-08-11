@@ -22,8 +22,22 @@ const baseContactFields = [
 ];
 
 const agentFields = [
-  { key: 'asesor', label: 'Nombre del asesor' },
+  { key: 'comercial', label: 'Nombre del comercial' },
+  { key: 'agente', label: 'Agente o producto de interés' },
   { key: 'empresa', label: 'Nombre de la empresa' },
+  // Se conserva por las plantillas ya aprobadas en Meta que la usan: cambiarle
+  // el nombre invalidaría su variable_index_map.
+  { key: 'asesor', label: 'Nombre del comercial (heredado)' },
+];
+
+/** Variables de la cadencia comercial B2B (§5 del documento de setup). */
+const commercialFields = [
+  { key: 'origen', label: 'Origen del lead (campaña, landing)' },
+  { key: 'liga', label: 'Liga a compartir' },
+  { key: 'tema', label: 'Tema que se platicó' },
+  { key: 'fecha', label: 'Fecha' },
+  { key: 'hora', label: 'Hora' },
+  { key: 'zona', label: 'Zona horaria' },
 ];
 
 const propertyFields = [
@@ -69,8 +83,17 @@ export function VariableSelector({ onSelect }: VariableSelectorProps) {
         ))}
 
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>🏢 Asesor y empresa</DropdownMenuLabel>
+        <DropdownMenuLabel>🏢 Comercial y empresa</DropdownMenuLabel>
         {agentFields.map((field) => (
+          <DropdownMenuItem key={field.key} onClick={() => handleSelect(field.key)}>
+            <code className="mr-2 text-xs bg-accent/20 px-1 rounded shrink-0">{`{{${field.key}}}`}</code>
+            <span className="text-muted-foreground text-xs">{field.label}</span>
+          </DropdownMenuItem>
+        ))}
+
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>💬 Seguimiento comercial</DropdownMenuLabel>
+        {commercialFields.map((field) => (
           <DropdownMenuItem key={field.key} onClick={() => handleSelect(field.key)}>
             <code className="mr-2 text-xs bg-accent/20 px-1 rounded shrink-0">{`{{${field.key}}}`}</code>
             <span className="text-muted-foreground text-xs">{field.label}</span>

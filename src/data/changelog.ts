@@ -44,6 +44,91 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.8.0",
+    date: "2026-08-11",
+    headline: "El contenido comercial ya está cargado",
+    changes: [
+      {
+        type: "feature",
+        area: "Base de Conocimiento",
+        description:
+          "Cargadas las 10 colecciones y 47 entradas del contenido comercial: Empresa, Plataforma, los cuatro agentes, Servicios, GCP, Implementación y Seguridad, y Comercial.",
+      },
+      {
+        type: "fix",
+        area: "Base de Conocimiento",
+        description:
+          "Corregido el nombre de la colección \"Prisim\" → \"Prism\".",
+      },
+      {
+        type: "feature",
+        area: "Agente IA General",
+        description:
+          "El agente ya está configurado como Ruffle, de Random Truffle, con sus instrucciones completas, tono cercano, máximo un emoji por mensaje y 320 caracteres.",
+      },
+      {
+        type: "improvement",
+        area: "Agente IA General",
+        description:
+          "\"Nunca revelar que es IA\" queda apagado: el agente se presenta como agente de AI, que es argumento de venta y no algo que esconder.",
+      },
+      {
+        type: "improvement",
+        area: "Agente IA General",
+        description:
+          "La sección de plantillas de prompt ya no aparece vacía: trae el prompt del agente comercial como punto de partida.",
+      },
+      {
+        type: "feature",
+        area: "Widget Web",
+        description:
+          "El chat del sitio ya se presenta como Ruffle, con su mensaje de bienvenida, seis píldoras de sugerencia, las cuatro píldoras de producto con su color y liga, y los botones de Agendar demo y Conoce a los agentes.",
+      },
+      {
+        type: "improvement",
+        area: "Widget Web",
+        description:
+          "Se quitó la píldora \"¿Cuáles son sus precios?\", que invitaba justo la pregunta que el agente no responde con cifras.",
+      },
+      {
+        type: "feature",
+        area: "Librería de Plantillas",
+        description:
+          "Cargadas las 7 plantillas de WhatsApp de la cadencia comercial (bienvenida, confirmación y recordatorio de demo, dos toques de follow-up, re-engagement y seguimiento de propuesta), listas para enviar a aprobación de Meta.",
+      },
+      {
+        type: "fix",
+        area: "Librería de Plantillas",
+        description:
+          "Las etiquetas del formulario ya coinciden con los grupos de la lista. Antes toda plantilla nueva caía en \"Sin grupo\" y los cinco grupos se veían vacíos.",
+      },
+      {
+        type: "improvement",
+        area: "Librería de Plantillas",
+        description:
+          "Nuevas variables de seguimiento comercial ({{comercial}}, {{origen}}, {{liga}}, {{tema}}, {{fecha}}, {{hora}}, {{zona}}) en el selector de variables.",
+      },
+      {
+        type: "feature",
+        area: "Leads",
+        description:
+          "Creados los campos personalizados del proceso comercial: País, Ciudad, Tipo de relación, Partner asociado, AE de Google Cloud, Canal de origen, Interés principal, Tamaño de empresa, Presupuesto y Urgencia, con sus listas de valores.",
+      },
+      {
+        type: "improvement",
+        area: "Oportunidades",
+        description:
+          "El pipeline comercial se alineó a las 11 etapas del proceso (se agregaron Calificado, Demo realizada y Cliente activo), y Nurturing y Perdido pasaron al final como estados laterales.",
+      },
+      {
+        type: "improvement",
+        area: "Asignación de leads",
+        description:
+          "El tope de leads activos por comercial quedó en 25.",
+      },
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-08-11",
     headline: "Los loops del pipeline ya se ejecutan",
