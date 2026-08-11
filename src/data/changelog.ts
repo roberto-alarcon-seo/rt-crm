@@ -44,6 +44,61 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.6.0",
+    date: "2026-08-11",
+    headline: "El Agente SDR ya funciona de verdad",
+    changes: [
+      {
+        type: "fix",
+        area: "Agente SDR",
+        description:
+          "La pantalla del Agente SDR ya guarda. Antes el botón mostraba \"Guardado\" pero no escribía nada: al recargar se perdía todo.",
+      },
+      {
+        type: "feature",
+        area: "Agente SDR",
+        description:
+          "Cada criterio de calificación tiene su propio peso editable, y la pantalla avisa cuando la suma no da 100.",
+      },
+      {
+        type: "feature",
+        area: "Agente SDR",
+        description:
+          "Umbrales configurables: a partir de qué score un lead es caliente, desde cuándo entra en nurturing, y en cuántas horas hay que proponerle demo.",
+      },
+      {
+        type: "feature",
+        area: "Agente SDR",
+        description:
+          "Cuando un lead cruza el umbral de caliente se agenda solo un seguimiento para su comercial, con el score y el motivo, y aparece en Seguimientos.",
+      },
+      {
+        type: "feature",
+        area: "Agente SDR",
+        description:
+          "El catálogo de productos y servicios ya se edita desde la pantalla, con la señal de entrada de cada uno. Antes era una lista fija y con las descripciones equivocadas.",
+      },
+      {
+        type: "feature",
+        area: "Contactos",
+        description:
+          "El score del lead ahora se guarda con su razón, visible en la ficha del contacto, y se puede recalificar con IA desde ahí.",
+      },
+      {
+        type: "improvement",
+        area: "Agente SDR",
+        description:
+          "La calificación por IA dejó de estar escrita para bienes raíces: evalúa tamaño de empresa, presupuesto, rol, urgencia, fit de producto y cobertura, con los pesos que tú configuras.",
+      },
+      {
+        type: "improvement",
+        area: "Agente SDR",
+        description:
+          "El Agente SDR ya tiene \"Probar conversación\", con el catálogo de productos y los criterios incluidos en la prueba.",
+      },
+    ],
+  },
+  {
     version: "1.5.3",
     date: "2026-08-11",
     changes: [

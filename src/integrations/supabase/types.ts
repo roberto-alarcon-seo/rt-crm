@@ -1956,6 +1956,10 @@ export type Database = {
           job_title: string | null
           last_interaction_at: string | null
           lead_score: number
+          lead_score_breakdown: Json | null
+          lead_score_reason: string | null
+          lead_score_source: string | null
+          lead_score_updated_at: string | null
           lead_temperature: string
           lifecycle: string
           linkedin_url: string | null
@@ -2014,6 +2018,10 @@ export type Database = {
           job_title?: string | null
           last_interaction_at?: string | null
           lead_score?: number
+          lead_score_breakdown?: Json | null
+          lead_score_reason?: string | null
+          lead_score_source?: string | null
+          lead_score_updated_at?: string | null
           lead_temperature?: string
           lifecycle?: string
           linkedin_url?: string | null
@@ -2072,6 +2080,10 @@ export type Database = {
           job_title?: string | null
           last_interaction_at?: string | null
           lead_score?: number
+          lead_score_breakdown?: Json | null
+          lead_score_reason?: string | null
+          lead_score_source?: string | null
+          lead_score_updated_at?: string | null
           lead_temperature?: string
           lifecycle?: string
           linkedin_url?: string | null
@@ -4507,6 +4519,100 @@ export type Database = {
           },
         ]
       }
+      sdr_products: {
+        Row: {
+          created_at: string
+          description: string
+          entry_signal: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          entry_signal?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          entry_signal?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_qualification_criteria: {
+        Row: {
+          created_at: string
+          criterion_key: string
+          guide_question: string
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          criterion_key: string
+          guide_question?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          tenant_id: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          criterion_key?: string
+          guide_question?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_qualification_criteria_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_events: {
         Row: {
           created_at: string
@@ -5561,6 +5667,56 @@ export type Database = {
             foreignKeyName: "tenant_integrations_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_sdr_settings: {
+        Row: {
+          created_at: string
+          demo_sla_hours: number
+          enabled: boolean
+          hot_threshold: number
+          id: string
+          notify_owner_on_hot: boolean
+          nurture_threshold: number
+          system_prompt: string | null
+          tenant_id: string
+          tone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          demo_sla_hours?: number
+          enabled?: boolean
+          hot_threshold?: number
+          id?: string
+          notify_owner_on_hot?: boolean
+          nurture_threshold?: number
+          system_prompt?: string | null
+          tenant_id: string
+          tone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          demo_sla_hours?: number
+          enabled?: boolean
+          hot_threshold?: number
+          id?: string
+          notify_owner_on_hot?: boolean
+          nurture_threshold?: number
+          system_prompt?: string | null
+          tenant_id?: string
+          tone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_sdr_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },

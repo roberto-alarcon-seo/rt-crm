@@ -35,6 +35,8 @@ import { useContactOpportunities } from "@/hooks/useOpportunities";
 import { cn } from "@/lib/utils";
 import { PhoneField } from "@/components/forms/PhoneField";
 import { parsePhoneValue, phoneCodeInfo, formatPhoneForDisplay } from "@/lib/phone";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffectiveTenantId } from "@/hooks/useEffectiveTenantId";
 
 const LEAD_SOURCES = [
   { value: "whatsapp",   label: "WhatsApp" },
@@ -127,6 +129,7 @@ export default function ContactEditor() {
   const accountIdParam = searchParams.get("account_id");
   const isMobile = useIsMobile();
   const { hasRole } = useAuth();
+  const effectiveTenantId = useEffectiveTenantId();
   const { contacts, customFields, customFieldOptions, loading, createContact, updateContact } = useContacts();
   const { accounts } = useAccounts();
 
@@ -158,6 +161,17 @@ export default function ContactEditor() {
     preferred_channel: "whatsapp",
   });
   const [tagInput, setTagInput] = useState("");
+  /**
+   * Explicación del score que escribe el Agente SDR. No es editable: la escribe
+   * el sistema junto con el score, porque el setup exige que todo score quede
+   * con su razón. Antes se generaba y se descartaba.
+   */
+  const [scoreMeta, setScoreMeta] = useState<{
+    reason: string | null;
+    source: string | null;
+    updatedAt: string | null;
+  }>({ reason: null, source: null, updatedAt: null });
+  const [isRescoring, setIsRescoring] = useState(false);
 
   const isEditing = !!id;
   const canManageContacts = hasRole(["administrador", "manager", "asesor"]);
@@ -178,6 +192,47 @@ export default function ContactEditor() {
   }, [customFields]);
 
   const categoryNames = Object.keys(fieldsByCategory.grouped).sort();
+
+  /** Pide al Agente SDR que recalifique este lead con los pesos configurados. */
+  const handleRescore = async () => {
+    if (!id || !effectiveTenantId) return;
+    setIsRescoring(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-lead-scoring", {
+        body: { tenant_id: effectiveTenantId, contact_id: id },
+      });
+      if (error) throw error;
+
+      const result = data as {
+        lead_score: number;
+        lead_temperature: "hot" | "warm" | "cold";
+        reasoning: string | null;
+        is_hot: boolean;
+      };
+
+      setFormData(prev => ({
+        ...prev,
+        lead_score: result.lead_score,
+        lead_temperature: result.lead_temperature,
+      }));
+      setScoreMeta({
+        reason: result.reasoning,
+        source: "ai",
+        updatedAt: new Date().toISOString(),
+      });
+      toast.success(
+        result.is_hot
+          ? `Score ${result.lead_score} — lead caliente, se avisó al comercial`
+          : `Score actualizado a ${result.lead_score}`,
+      );
+    } catch (err) {
+      toast.error("No se pudo recalificar el lead", {
+        description: err instanceof Error ? err.message : "error desconocido",
+      });
+    } finally {
+      setIsRescoring(false);
+    }
+  };
 
   const handleBack = () => {
     if (fromConversationId) {
@@ -238,6 +293,11 @@ export default function ContactEditor() {
           job_title: c.job_title ?? null,
           linkedin_url: c.linkedin_url ?? null,
           preferred_channel: c.preferred_channel ?? "whatsapp",
+        });
+        setScoreMeta({
+          reason: c.lead_score_reason ?? null,
+          source: c.lead_score_source ?? null,
+          updatedAt: c.lead_score_updated_at ?? null,
         });
       } else {
         toast.error("Contacto no encontrado");
@@ -829,6 +889,38 @@ export default function ContactEditor() {
                       </Select>
                     </div>
                   </div>
+
+                  {/* Razón del score — la escribe el Agente SDR, no se edita a mano */}
+                  {isEditing && (
+                    <div className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Razón del score
+                          </p>
+                          <p className="text-sm mt-0.5">
+                            {scoreMeta.reason ?? "Aún sin calificar por el Agente SDR."}
+                          </p>
+                          {scoreMeta.updatedAt && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {scoreMeta.source === "ai" ? "Agente SDR" : "Manual"} ·{" "}
+                              {new Date(scoreMeta.updatedAt).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0"
+                          onClick={handleRescore}
+                          disabled={isRescoring}
+                        >
+                          {isRescoring ? "Calificando…" : "Recalificar con IA"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Next action + Status */}
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
