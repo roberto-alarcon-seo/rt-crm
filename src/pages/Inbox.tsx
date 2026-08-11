@@ -710,7 +710,7 @@ export default function Inbox() {
                     Esta conversación está asignada a{" "}
                     <strong>
                       {memberMap.get(selectedConversation.contact.assigned_agent_id)?.name ||
-                        "otro asesor"}
+                        "otro comercial"}
                     </strong>
                     . Coordina antes de responder para evitar duplicar la atención.
                   </span>

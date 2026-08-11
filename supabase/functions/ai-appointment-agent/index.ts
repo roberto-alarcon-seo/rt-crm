@@ -190,7 +190,7 @@ serve(async (req) => {
             console.log(`📅 Event ${event.id}: 24h window open, using free-form AI`);
 
             if (openrouterKey) {
-              const systemPrompt = `Eres ${agentName}, asesora inmobiliaria. Escribe UN mensaje de WhatsApp para recordar y confirmar una cita con el cliente.
+              const systemPrompt = `Eres ${agentName}, del equipo comercial. Escribe UN mensaje de WhatsApp para recordar y confirmar una cita con el cliente.
 
 CONFIGURACIÓN REGIONAL (${regionCode}):
 ${regionContext}

@@ -519,11 +519,32 @@ Retorna ÚNICAMENTE este JSON sin texto adicional ni backticks:
         });
         const metaCampaignId = campaignRes.id as string;
 
+        // La URL del aviso de privacidad estaba hardcodeada a la de otro partner
+        // (brokia24.com), así que cualquier formulario de leads de Meta apuntaba
+        // al aviso equivocado. Ahora sale de la configuración de consentimiento
+        // del tenant, que es donde el equipo la mantiene.
+        const { data: consentCfg } = await admin
+          .from("tenant_consent_settings")
+          .select("privacy_policy_url")
+          .eq("tenant_id", tenantId)
+          .maybeSingle();
+
+        const privacyUrl = consentCfg?.privacy_policy_url;
+        if (!privacyUrl) {
+          return json(
+            {
+              error:
+                "Falta el aviso de privacidad. Configúralo en Ajustes → Consentimiento antes de publicar un formulario de leads en Meta.",
+            },
+            400,
+          );
+        }
+
         const formRes = await metaPost(`/${adAccountId}/leadgen_forms`, {
           name: `Form - ${campaign.name}`.slice(0, 100),
           questions: JSON.stringify(campaign.lead_form_fields ?? []),
           privacy_policy: JSON.stringify({
-            url: "https://brokia24.com/privacidad",
+            url: privacyUrl,
             link_text: "Política de privacidad",
           }),
           access_token: token,

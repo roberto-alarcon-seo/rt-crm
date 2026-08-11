@@ -148,7 +148,7 @@ serve(async (req) => {
 
     const stagesDescription = stages.map(s => `- ${s.value}: ${s.label}`).join('\n');
 
-    const systemPrompt = `Eres un analista experto en ventas inmobiliarias. Tu tarea es analizar una conversación de WhatsApp entre un asesor y un cliente, y determinar en qué etapa del pipeline se encuentra.
+    const systemPrompt = `Eres un analista experto en procesos de venta. Tu tarea es analizar una conversación de WhatsApp entre un comercial y un cliente, y determinar en qué etapa del pipeline se encuentra.
 
 TIPO DE PIPELINE: ${label}
 

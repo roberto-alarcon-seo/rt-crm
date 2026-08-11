@@ -478,7 +478,7 @@ async function callOpenRouter(
 
 async function getAnalysisText(apiKey: string, data: string, instruction: string): Promise<string> {
   const res = await callOpenRouter(apiKey, [
-    { role: 'system', content: 'Eres un analista de CRM inmobiliario. Responde en español, en markdown, 2-3 oraciones máximo. Sé directo y específico.' },
+    { role: 'system', content: 'Eres un analista de datos del CRM. Responde en español, en markdown, 2-3 oraciones máximo. Sé directo y específico.' },
     { role: 'user', content: `${instruction}\n\n${data}` },
   ]);
   return res.choices?.[0]?.message?.content ?? '';
@@ -1370,7 +1370,7 @@ serve(async (req) => {
     const monthIso = monthStart();
 
     const systemPrompt = `Eres Brokia IA Studio, el asistente inteligente del CRM Brokia24 / MLS LATAM.
-Ayudas a equipos inmobiliarios a analizar datos, generar reportes, buscar contactos y ejecutar acciones en el CRM.
+Ayudas a equipos comerciales a analizar datos, generar reportes, buscar contactos y ejecutar acciones en el CRM.
 Responde siempre en español, de forma concisa y profesional.
 Hoy es ${today} (${nowIso}). La semana actual va del ${monIso} al ${sunIso}. El mes actual inició el ${monthIso}.
 

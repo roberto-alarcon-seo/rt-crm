@@ -190,10 +190,10 @@ export default function Events() {
           {!myEventsOnly && teamUsers.length > 1 && (
             <Select onValueChange={handleAgentFilter} defaultValue="all">
               <SelectTrigger className="w-[120px] md:w-[150px] text-xs md:text-sm h-9">
-                <SelectValue placeholder="Asesor" />
+                <SelectValue placeholder="Comercial" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos los asesores</SelectItem>
+                <SelectItem value="all">Todos los comerciales</SelectItem>
                 {teamUsers.map(u => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.name}

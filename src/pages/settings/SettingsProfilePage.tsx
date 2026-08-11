@@ -256,7 +256,7 @@ export default function SettingsProfilePage() {
                   id="job_title"
                   value={form.job_title}
                   onChange={(e) => setForm((f) => ({ ...f, job_title: e.target.value }))}
-                  placeholder="Asesor inmobiliario"
+                  placeholder="Ejecutivo comercial"
                 />
               </div>
             </div>

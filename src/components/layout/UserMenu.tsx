@@ -42,7 +42,9 @@ export const UserMenu = () => {
     switch (tenantRole) {
       case 'administrador': return 'Administrador';
       case 'manager': return 'Manager';
-      case 'asesor': return 'Asesor';
+      // El valor del enum sigue siendo 'asesor' en la BD (migrarlo afectaría a
+      // los partners que ya lo usan); solo cambia la etiqueta visible.
+      case 'asesor': return 'Comercial';
       default: return 'Usuario';
     }
   };

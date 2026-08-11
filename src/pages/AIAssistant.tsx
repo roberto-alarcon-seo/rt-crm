@@ -64,7 +64,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     icon: TrendingUp,
     label: "Análisis de conversión",
-    description: "Tasa de cierre por asesor y por etapa del pipeline",
+    description: "Tasa de cierre por comercial y por etapa del pipeline",
     prompt: "Muéstrame la tasa de conversión del pipeline este mes",
     color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   },

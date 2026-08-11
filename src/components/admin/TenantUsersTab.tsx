@@ -35,7 +35,7 @@ const roleLabels: Record<string, string> = {
   administrador: 'Administrador',
   manager: 'Manager',
   marketer: 'Marketer',
-  asesor: 'Asesor',
+  asesor: 'Comercial',
 };
 
 export function TenantUsersTab({ tenantId, managedExternally }: TenantUsersTabProps) {

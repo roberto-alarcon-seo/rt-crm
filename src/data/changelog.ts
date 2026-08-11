@@ -44,6 +44,49 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.10.0",
+    date: "2026-08-11",
+    headline: "El CRM ya habla como un CRM comercial",
+    changes: [
+      {
+        type: "improvement",
+        area: "General",
+        description:
+          "El sistema dice \"comercial\", \"cuenta\" y \"oportunidad\" donde antes decía \"asesor\" e \"inmueble\": Asignación de leads, Contactos, Reuniones, Inbox, Supervisión, Equipo y el mensaje de escalamiento del agente.",
+      },
+      {
+        type: "improvement",
+        area: "Asignación de leads",
+        description:
+          "La regla de asignación por inmueble solo aparece si tienes el módulo de inventario activo. El orden de evaluación que se muestra corresponde a lo que realmente se aplica.",
+      },
+      {
+        type: "improvement",
+        area: "Inicio de sesión",
+        description:
+          "La pantalla de acceso se adapta a la marca: ya no dice \"CRM Inmobiliario\" ni muestra un testimonial de otra empresa.",
+      },
+      {
+        type: "improvement",
+        area: "Inteligencia",
+        description:
+          "Los agentes de IA dejaron de presentarse como agentes inmobiliarios. El contexto del negocio llega por tus instrucciones y tu Base de Conocimiento, no por un rubro fijo en el sistema.",
+      },
+      {
+        type: "fix",
+        area: "Campañas",
+        description:
+          "Los formularios de leads de Meta usaban un aviso de privacidad de otra empresa. Ahora usan el que configures en Consentimiento, y avisan si falta antes de publicar.",
+      },
+      {
+        type: "internal",
+        area: "General",
+        description:
+          "Se eliminaron once archivos de pantallas y tarjetas inmobiliarias que ya no eran alcanzables desde ninguna ruta.",
+      },
+    ],
+  },
+  {
     version: "1.9.0",
     date: "2026-08-11",
     headline: "Responder BAJA ya funciona",

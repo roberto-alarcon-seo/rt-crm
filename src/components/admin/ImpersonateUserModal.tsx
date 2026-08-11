@@ -29,7 +29,7 @@ const roleLabels: Record<string, string> = {
   administrador: 'Administrador',
   manager: 'Manager',
   marketer: 'Marketer',
-  asesor: 'Asesor',
+  asesor: 'Comercial',
 };
 
 function roleBadgeClass(role: string | null): string {

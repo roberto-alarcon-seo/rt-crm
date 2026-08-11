@@ -332,11 +332,11 @@ serve(async (req) => {
           const afterAllHint = isLastAttempt && (markAsLost || escalateToHuman)
             ? markAsLost
               ? '- Es el último intento. Si no responde, el lead será marcado como perdido. Ofrece una alternativa concreta antes de cerrar.'
-              : '- Es el último intento antes de pasar el caso a un asesor. Ofrece alternativas concretas y deja la puerta abierta.'
+              : '- Es el último intento antes de pasar el caso a una persona del equipo. Ofrece alternativas concretas y deja la puerta abierta.'
             : '';
 
           // ── Build system prompt ────────────────────────────────────────────
-          const systemPrompt = `Eres ${agentName}, asesora inmobiliaria especializada. Tu tarea es escribir UN SOLO mensaje de seguimiento para retomar contacto con un cliente que no ha respondido.
+          const systemPrompt = `Eres ${agentName}, del equipo comercial. Tu tarea es escribir UN SOLO mensaje de seguimiento para retomar contacto con un cliente que no ha respondido.
 
 CONFIGURACIÓN REGIONAL (${regionCode}):
 ${regionContext}

@@ -95,7 +95,7 @@ const FEATURE_OPTIONS: FeatureOption[] = [
     key: 'inventory_management',
     label: 'Inventario',
     description:
-      'Habilita la gestión local de propiedades: alta, edición y asignación de asesores desde la interfaz del tenant.',
+      'Habilita la gestión local de propiedades: alta, edición y asignación de comerciales desde la interfaz del tenant.',
     value:
       'Ideal para partners que NO sincronizan inventario desde un sistema externo y necesitan capturar propiedades directamente. Solo visible para Manager y Administrador.',
     icon: Building2,

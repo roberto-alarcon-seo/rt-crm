@@ -17,11 +17,50 @@ const loginSchema = z.object({
 
 const REMEMBERED_EMAIL_KEY = 'notyfive_remembered_email';
 
+/**
+ * Contenido del panel derecho del login, por partner.
+ *
+ * Estaba escrito para una operación inmobiliaria ("CRM Inmobiliario Enterprise",
+ * un testimonial de MLS LATAM y una foto de propiedad de lujo), lo cual es
+ * correcto para Brokia24 y MLS LATAM pero no para un CRM comercial B2B. Al ser
+ * un producto white-label, el hero se resuelve por partner en lugar de reescribir
+ * el de nadie.
+ */
+interface AuthHero {
+  imageUrl: string;
+  imageAlt: string;
+  quote: string;
+  author: string;
+  badgeTitle: string;
+  badgeSubtitle: string;
+}
+
+const REAL_ESTATE_HERO: AuthHero = {
+  imageUrl: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600&q=85&auto=format&fit=crop',
+  imageAlt: 'Propiedad de lujo',
+  quote: '"La plataforma que necesitaba para escalar mi operación inmobiliaria."',
+  author: '— Mateo Benavides, Administrador · MLS LATAM',
+  badgeTitle: 'CRM Inmobiliario Enterprise',
+  badgeSubtitle: 'Impulsado por IA',
+};
+
+const AUTH_HERO_BY_PARTNER: Record<string, AuthHero> = {
+  randomtruffle: {
+    imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&q=85&auto=format&fit=crop',
+    imageAlt: 'Equipo comercial trabajando',
+    quote: '"Todo el pipeline comercial en un solo lugar, con los agentes haciendo el trabajo pesado."',
+    author: '— Equipo comercial · Random Truffle',
+    badgeTitle: 'CRM Comercial Enterprise',
+    badgeSubtitle: 'Impulsado por IA',
+  },
+};
+
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { signIn, signOut, user, isSuperAdmin, isLoading: authLoading } = useAuth();
   const { partner } = usePartnerBranding();
+  const hero = AUTH_HERO_BY_PARTNER[partner.id] ?? REAL_ESTATE_HERO;
   const { theme } = useTheme();
   // "partner" and "light" both render with the light html class
   const isLight = theme === 'light' || theme === 'partner';
@@ -221,8 +260,8 @@ const Auth = () => {
       {/* ── RIGHT: imagen de propiedad ── */}
       <div className="relative flex-1 hidden lg:block">
         <img
-          src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1600&q=85&auto=format&fit=crop"
-          alt="Propiedad de lujo"
+          src={hero.imageUrl}
+          alt={hero.imageAlt}
           className="absolute inset-0 w-full h-full object-cover"
         />
         {/* Overlay gradiente inferior para el quote */}
@@ -231,17 +270,17 @@ const Auth = () => {
         {/* Testimonial */}
         <div className="absolute bottom-10 left-10 right-10">
           <blockquote className="text-white text-xl font-semibold leading-snug mb-3 max-w-lg">
-            "La plataforma que necesitaba para escalar mi operación inmobiliaria."
+            {hero.quote}
           </blockquote>
           <p className="text-white/70 text-sm font-medium">
-            — Mateo Benavides, Administrador · MLS LATAM
+            {hero.author}
           </p>
         </div>
 
         {/* Badge top-right */}
         <div className="absolute top-8 right-8 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2.5">
-          <p className="text-white text-xs font-semibold">CRM Inmobiliario Enterprise</p>
-          <p className="text-white/60 text-xs mt-0.5">Impulsado por IA</p>
+          <p className="text-white text-xs font-semibold">{hero.badgeTitle}</p>
+          <p className="text-white/60 text-xs mt-0.5">{hero.badgeSubtitle}</p>
         </div>
       </div>
 

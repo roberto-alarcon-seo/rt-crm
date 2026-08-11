@@ -11,11 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 export default function SettingsAssignmentRules() {
   const { tenantRole, isSuperAdmin } = useAuth();
   const { data: rules, isLoading, update } = useAssignmentRules();
   const { data: agents, setActive } = useAssignableAgents();
+  // Los partners con inventario propio asignan por inmueble; los B2B no.
+  const { enabled: inventoryEnabled } = useFeatureFlag("inventory_management");
 
   const [form, setForm] = useState({
     round_robin_enabled: true,
@@ -59,7 +62,7 @@ export default function SettingsAssignmentRules() {
   return (
     <SettingsLayout
       title="Asignación de leads"
-      description="Define cómo se asignan los clientes a los asesores"
+      description="Define cómo se asignan los leads a los comerciales"
       icon={Users}
     >
       {isLoading ? (
@@ -72,7 +75,9 @@ export default function SettingsAssignmentRules() {
             <CardHeader>
               <CardTitle>Reglas de asignación</CardTitle>
               <CardDescription>
-                Orden de evaluación: Sticky Agent → Asesor del inmueble → Round Robin → Fallback.
+                {inventoryEnabled
+                  ? "Orden de evaluación: Sticky Agent → Comercial del inmueble → Round Robin → Fallback."
+                  : "Orden de evaluación: Sticky Agent → Round Robin → Fallback."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -80,7 +85,7 @@ export default function SettingsAssignmentRules() {
                 <div>
                   <Label className="text-sm font-medium">Round Robin</Label>
                   <p className="text-xs text-muted-foreground">
-                    Rota nuevos leads entre los asesores activos.
+                    Rota nuevos leads entre los comerciales activos.
                   </p>
                 </div>
                 <Switch
@@ -93,7 +98,7 @@ export default function SettingsAssignmentRules() {
                 <div>
                   <Label className="text-sm font-medium">Sticky Agent</Label>
                   <p className="text-xs text-muted-foreground">
-                    Si el cliente ya fue atendido, vuelve siempre con el mismo asesor.
+                    Si el lead ya fue atendido, vuelve siempre con el mismo comercial.
                   </p>
                 </div>
                 <Switch
@@ -102,19 +107,23 @@ export default function SettingsAssignmentRules() {
                 />
               </div>
 
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Sticky tiene prioridad sobre el inmueble</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Si está apagado, cuando el cliente vuelve interesado en otro inmueble que tiene asesor asignado,
-                    se usa el asesor del inmueble.
-                  </p>
+              {/* La asignación por inmueble solo existe para los partners con
+                  inventario propio; en una operación B2B esa rama nunca aplica. */}
+              {inventoryEnabled && (
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Sticky tiene prioridad sobre el inmueble</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Si está apagado, cuando el lead vuelve interesado en otro inmueble que tiene comercial asignado,
+                      se usa el comercial del inmueble.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={form.sticky_overrides_property}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, sticky_overrides_property: v }))}
+                  />
                 </div>
-                <Switch
-                  checked={form.sticky_overrides_property}
-                  onCheckedChange={(v) => setForm((f) => ({ ...f, sticky_overrides_property: v }))}
-                />
-              </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1.5">
@@ -147,7 +156,7 @@ export default function SettingsAssignmentRules() {
                   </Select>
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label htmlFor="max">Máximo de leads activos por asesor</Label>
+                  <Label htmlFor="max">Máximo de leads activos por comercial</Label>
                   <Input
                     id="max"
                     type="number"
@@ -159,7 +168,7 @@ export default function SettingsAssignmentRules() {
                     }
                   />
                   <p className="text-xs text-muted-foreground">
-                    Deja vacío para no aplicar límite. Cuando un asesor llega al tope, se salta en la rotación.
+                    Deja vacío para no aplicar límite. Cuando un comercial llega al tope, se salta en la rotación.
                   </p>
                 </div>
               </div>
@@ -174,15 +183,15 @@ export default function SettingsAssignmentRules() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Asesores disponibles</CardTitle>
+              <CardTitle>Comerciales disponibles</CardTitle>
               <CardDescription>
-                Activa o pausa asesores en la rotación sin desactivar su cuenta.
+                Activa o pausa comerciales en la rotación sin desactivar su cuenta.
               </CardDescription>
             </CardHeader>
             <CardContent className="divide-y">
               {(agents ?? []).length === 0 && (
                 <p className="text-sm text-muted-foreground py-4">
-                  No hay asesores en esta organización.
+                  No hay comerciales en esta organización.
                 </p>
               )}
               {(agents ?? []).map((a) => (

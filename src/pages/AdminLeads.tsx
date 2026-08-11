@@ -285,7 +285,7 @@ export default function AdminLeads() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              Distribución de leads por asesor
+              Distribución de leads por comercial
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -491,7 +491,7 @@ export default function AdminLeads() {
                 Reasignaciones recientes (últimos 30 días)
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                Auditoría de todos los cambios de asesor: manual, por timeout, round-robin o reclamados.
+                Auditoría de todos los cambios de comercial: manual, por timeout, round-robin o reclamados.
               </p>
             </CardHeader>
             <CardContent className="overflow-x-auto">

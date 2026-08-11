@@ -99,7 +99,7 @@ export default function SettingsAIConfig() {
     escalate_on_human_request: true,
     escalate_on_frustration: true,
     behavior_prompt: '',
-    fallback_message: 'Enseguida te atiende un asesor.',
+    fallback_message: 'Enseguida te conecto con el equipo comercial.',
     region_code: 'MX',
     language: 'es' as 'es' | 'en' | 'pt',
     formality: 'tu' as 'tu' | 'usted' | 'vos',
@@ -126,7 +126,7 @@ export default function SettingsAIConfig() {
         escalate_on_human_request: settings.escalate_on_human_request,
         escalate_on_frustration: (settings as any).escalate_on_frustration ?? true,
         behavior_prompt: settings.behavior_prompt || '',
-        fallback_message: settings.fallback_message || 'Enseguida te atiende un asesor.',
+        fallback_message: settings.fallback_message || 'Enseguida te conecto con el equipo comercial.',
         region_code: settings.region_code || 'MX',
         language: (settings.language || 'es') as any,
         formality: (settings.formality || 'tu') as any,
@@ -406,7 +406,7 @@ export default function SettingsAIConfig() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-muted-foreground" />Cuándo escalar a humano</CardTitle>
-                <CardDescription>Define automáticamente cuándo la IA pasa la conversación a un asesor</CardDescription>
+                <CardDescription>Define automáticamente cuándo la IA pasa la conversación a una persona del equipo</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ToggleRow label="Cliente pide hablar con humano" desc='Detecta "asesor", "agente", "persona real"…'
@@ -454,7 +454,7 @@ export default function SettingsAIConfig() {
                 <div className="space-y-2">
                   <Label>Mensaje de escalamiento</Label>
                   <Input value={formData.fallback_message} onChange={(e) => setFormData({ ...formData, fallback_message: e.target.value })} />
-                  <p className="text-xs text-muted-foreground">Se envía cuando la IA pasa al asesor humano.</p>
+                  <p className="text-xs text-muted-foreground">Se envía cuando la IA pasa a una persona del equipo.</p>
                 </div>
               </CardContent>
             </Card>

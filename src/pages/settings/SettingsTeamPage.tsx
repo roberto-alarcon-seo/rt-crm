@@ -55,7 +55,9 @@ import { cn } from "@/lib/utils";
 const ROLE_OPTIONS = [
   { value: "administrador", label: "Administrador" },
   { value: "manager", label: "Manager" },
-  { value: "asesor", label: "Asesor" },
+  // El valor 'asesor' es el del enum tenant_role en la BD; la etiqueta visible
+  // es "Comercial" porque el CRM ya no vende inmuebles.
+  { value: "asesor", label: "Comercial" },
 ] as const;
 
 const ROLE_BADGE: Record<string, { label: string; cls: string }> = {

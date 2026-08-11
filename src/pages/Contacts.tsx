@@ -814,7 +814,7 @@ export default function Contacts() {
               <th className="text-left p-4 text-sm font-medium text-muted-foreground">Teléfono</th>
               <th className="text-left p-4 text-sm font-medium text-muted-foreground">País</th>
               <th className="text-left p-4 text-sm font-medium text-muted-foreground">Etiquetas</th>
-              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Asesor</th>
+              <th className="text-left p-4 text-sm font-medium text-muted-foreground">Comercial</th>
               {visibleCustomFields.map(field => (
                 <th key={field.id} className="text-left p-4 text-sm font-medium text-muted-foreground">
                   {field.name}

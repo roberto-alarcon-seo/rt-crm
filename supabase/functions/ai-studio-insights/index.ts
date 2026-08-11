@@ -53,7 +53,7 @@ async function briefingText(apiKey: string, context: string): Promise<string> {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: 'Eres el asistente de inteligencia de negocio de un CRM inmobiliario. Genera un briefing matutino en español, en markdown, máximo 4 oraciones. Sé directo y accionable. Resalta los puntos más urgentes.' },
+          { role: 'system', content: 'Eres el asistente de inteligencia de negocio del CRM. Genera un briefing matutino en español, en markdown, máximo 4 oraciones. Sé directo y accionable. Resalta los puntos más urgentes.' },
           { role: 'user', content: context },
         ],
       }),

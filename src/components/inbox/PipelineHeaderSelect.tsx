@@ -179,7 +179,7 @@ export function PipelineHeaderSelect({
     if (isUpdating || newStage === localStage) return;
 
     if (isAsesor && isOwnedByOther) {
-      toast.error("Este lead pertenece a otro asesor. Pídele que haga el cambio o escala a tu manager.");
+      toast.error("Este lead pertenece a otro comercial. Pídele que haga el cambio o escala a tu manager.");
       return;
     }
 
@@ -195,7 +195,7 @@ export function PipelineHeaderSelect({
   const handlePipelineTypeChange = async (newType: PipelineType) => {
     if (isUpdating || newType === localPipelineType) return;
     if (isAsesor && isOwnedByOther) {
-      toast.error("Este lead pertenece a otro asesor.");
+      toast.error("Este lead pertenece a otro comercial.");
       return;
     }
     const newStage = DEFAULT_STAGE[newType];
@@ -216,7 +216,7 @@ export function PipelineHeaderSelect({
       if (!row?.success) {
         const code = row?.error_code || 'CLAIM_FAILED';
         if (code === 'ALREADY_ASSIGNED') {
-          toast.error("Otro asesor tomó este lead primero.");
+          toast.error("Otro comercial tomó este lead primero.");
         } else {
           toast.error(`No se pudo tomar el lead (${code})`);
         }
@@ -298,7 +298,7 @@ export function PipelineHeaderSelect({
             isClosed && "bg-green-500/15 text-green-400 hover:bg-green-500/20",
             !isClosed && !isLost && "bg-primary/15 text-primary hover:bg-primary/20"
           )}
-          title={isAsesor && isOwnedByOther ? "Lead asignado a otro asesor" : undefined}
+          title={isAsesor && isOwnedByOther ? "Lead asignado a otro comercial" : undefined}
         >
           <span className={cn(
             "w-1.5 h-1.5 rounded-full shrink-0",
@@ -335,7 +335,7 @@ export function PipelineHeaderSelect({
         <AlertDialogHeader>
           <AlertDialogTitle>Tomar este lead</AlertDialogTitle>
           <AlertDialogDescription>
-            Este lead aún no tiene asesor asignado. Para cambiar la etapa a{" "}
+            Este lead aún no tiene comercial asignado. Para cambiar la etapa a{" "}
             <strong>{stages.find(s => s.value === pendingStage)?.label}</strong>{" "}
             primero se te asignará a ti. ¿Continuar?
           </AlertDialogDescription>
