@@ -107,11 +107,11 @@ serve(async (req) => {
     const baseContactFields = [
       { key: 'name', name: 'Nombre', type: 'text' },
       { key: 'email', name: 'Email', type: 'text' },
-      { key: 'phone', name: 'TelÃ©fono', type: 'text' },
-      { key: 'country', name: 'PaÃ­s', type: 'text' },
+      { key: 'phone', name: 'Teléfono', type: 'text' },
+      { key: 'country', name: 'País', type: 'text' },
       { key: 'tags', name: 'Etiquetas', type: 'array' },
       { key: 'status', name: 'Estado', type: 'enum', values: ['active', 'archived', 'deleted'] },
-      { key: 'created_at', name: 'Fecha de creaciÃ³n', type: 'datetime' },
+      { key: 'created_at', name: 'Fecha de creación', type: 'datetime' },
     ];
 
     const allAvailableFields = [
@@ -135,10 +135,10 @@ serve(async (req) => {
 - Segmentos existentes: ${segments?.length || 0}
 - Plantillas aprobadas: ${templates?.length || 0}
 
-=== ESTADÃSTICAS REALES DE CAMPOS PERSONALIZADOS ===
+=== ESTADÍSTICAS REALES DE CAMPOS PERSONALIZADOS ===
 ${fieldStatsDisplay || 'Sin datos de campos personalizados'}
 
-=== CAMPOS DISPONIBLES PARA SEGMENTACIÃ“N ===
+=== CAMPOS DISPONIBLES PARA SEGMENTACIÓN ===
 SOLO puedes usar estos campos en las reglas de segmentos:
 
 CAMPOS BASE:
@@ -147,11 +147,11 @@ ${baseContactFields.map(f => `- ${f.key} (${f.name}, tipo: ${f.type})`).join('\n
 CAMPOS PERSONALIZADOS DEL TENANT:
 ${customFields && customFields.length > 0 
   ? customFields.map(f => `- ${f.key} (${f.name}, tipo: ${f.data_type})`).join('\n') 
-  : 'âš ï¸ NO HAY CAMPOS PERSONALIZADOS CONFIGURADOS - NO INVENTES CAMPOS'}
+  : '⚠️ NO HAY CAMPOS PERSONALIZADOS CONFIGURADOS - NO INVENTES CAMPOS'}
 
-=== REGLA CRÃTICA ===
-- USA LOS CONTEOS REALES de "ESTADÃSTICAS REALES DE CAMPOS PERSONALIZADOS" para estimatedCount
-- NUNCA inventes nÃºmeros, usa los datos reales
+=== REGLA CRÍTICA ===
+- USA LOS CONTEOS REALES de "ESTADÍSTICAS REALES DE CAMPOS PERSONALIZADOS" para estimatedCount
+- NUNCA inventes números, usa los datos reales
 - Si el usuario menciona un criterio y existe el campo, usa el conteo real
 
 SEGMENTOS EXISTENTES:
@@ -188,47 +188,47 @@ ${templates?.map(t => `- ${t.name} (${t.category})`).join('\n') || 'Ninguna'}`;
       : '';
     const isCopyAdjustment = lastUserMessage.includes('ajust') || 
       lastUserMessage.includes('mejor') ||
-      lastUserMessage.includes('mÃ¡s corto') ||
-      lastUserMessage.includes('mÃ¡s largo') ||
-      lastUserMessage.includes('mÃ¡s agresivo') ||
+      lastUserMessage.includes('más corto') ||
+      lastUserMessage.includes('más largo') ||
+      lastUserMessage.includes('más agresivo') ||
       lastUserMessage.includes('tono') ||
       lastUserMessage.includes('variante') ||
       lastUserMessage.includes('cambia el') ||
       lastUserMessage.includes('modifica');
 
-    const systemPrompt = `Eres un copiloto de campaÃ±as de WhatsApp. Tu interfaz tiene DOS paneles:
-- Panel IZQUIERDO: Chat conversacional (donde responderÃ¡s)
-- Panel DERECHO: Constructor de campaÃ±a (donde el usuario ve segmentos y copys)
+    const systemPrompt = `Eres un copiloto de campañas de WhatsApp. Tu interfaz tiene DOS paneles:
+- Panel IZQUIERDO: Chat conversacional (donde responderás)
+- Panel DERECHO: Constructor de campaña (donde el usuario ve segmentos y copys)
 
 === REGLA ABSOLUTA DE CANALES DE SALIDA ===
 
-El chat es SOLO un canal de coordinaciÃ³n. NUNCA debes mostrar en el chat:
+El chat es SOLO un canal de coordinación. NUNCA debes mostrar en el chat:
 - Copys completos o parciales
 - Variantes de copys
 - Segmentos con sus reglas
-- JSON o estructuras tÃ©cnicas
+- JSON o estructuras técnicas
 - Explicaciones detalladas de contenido
 
 === BLOQUEO DE ECHO ===
 Si un copy ya existe en el panel derecho, NUNCA lo repitas en el chat bajo ninguna circunstancia.
 
 === MENSAJES PERMITIDOS EN CHAT ===
-âœ“ "Â¡Entendido! Â¿A quÃ© tipo de clientes quieres llegar?"
-âœ“ "Perfecto ðŸŽ¯ Ya preparÃ© una propuesta en el panel derecho"
-âœ“ "Listo ðŸ‘ ActualicÃ© el copy con un tono mÃ¡s directo."
-âœ“ "Ya dejÃ© una versiÃ³n mÃ¡s corta en el panel derecho."
-âœ“ "Â¿Quieres ajustar algo mÃ¡s?"
+✓ "¡Entendido! ¿A qué tipo de clientes quieres llegar?"
+✓ "Perfecto 🎯 Ya preparé una propuesta en el panel derecho"
+✓ "Listo 👍 Actualicé el copy con un tono más directo."
+✓ "Ya dejé una versión más corta en el panel derecho."
+✓ "¿Quieres ajustar algo más?"
 
 === MENSAJES PROHIBIDOS ===
-âœ— Listar segmentos con detalles
-âœ— Mostrar copys completos o parciales
-âœ— Mostrar variantes de texto
-âœ— Explicar reglas tÃ©cnicas
-âœ— Usar Markdown con estructuras
-âœ— Mostrar JSON directamente
-âœ— Repetir contenido que ya estÃ¡ en el panel
+✗ Listar segmentos con detalles
+✗ Mostrar copys completos o parciales
+✗ Mostrar variantes de texto
+✗ Explicar reglas técnicas
+✗ Usar Markdown con estructuras
+✗ Mostrar JSON directamente
+✗ Repetir contenido que ya está en el panel
 
-=== ${aiSettings?.use_emojis ? `Usar mÃ¡ximo ${aiSettings?.max_emojis_per_message || 2} emojis` : 'No usar emojis'} ===
+=== ${aiSettings?.use_emojis ? `Usar máximo ${aiSettings?.max_emojis_per_message || 2} emojis` : 'No usar emojis'} ===
 
 ${dataContext}
 
@@ -239,21 +239,21 @@ FASE ACTUAL: AJUSTE DE COPY
 
 El usuario quiere modificar un copy existente. DEBES:
 1. NO escribir el copy en el chat
-2. Generar la nueva versiÃ³n internamente
-3. Responder ÃšNICAMENTE con JSON de actualizaciÃ³n
+2. Generar la nueva versión internamente
+3. Responder ÚNICAMENTE con JSON de actualización
 4. Confirmar con mensaje muy corto
 
 Responde SOLO con este JSON:
 {
   "phase": "update_copy",
-  "chat_message": "Listo ðŸ‘ Ya apliquÃ© el ajuste en el panel derecho.",
+  "chat_message": "Listo 👍 Ya apliqué el ajuste en el panel derecho.",
   "panel_propuestas": {
     "accion": "update_copy",
     "copy_id": "copy_1",
     "nuevo_contenido": "El nuevo texto del copy con {{variables}} si aplica",
     "cambios": {
       "tipo": "tono|longitud|enfoque|CTA",
-      "descripcion": "DescripciÃ³n breve del cambio realizado"
+      "descripcion": "Descripción breve del cambio realizado"
     }
   }
 }
@@ -262,27 +262,27 @@ FASE ACTUAL: DESCUBRIMIENTO
 Preguntas del usuario: ${messageCount}
 
 Necesitas saber (en este orden de prioridad):
-${!hasObjective ? '- Objetivo (vender, informar, reactivar, recordar)' : 'âœ“ Objetivo: ' + context?.objective}
-${!hasClientType ? '- Tipo de cliente objetivo (a quiÃ©n va dirigido)' : 'âœ“ Tipo cliente: ' + context?.clientType}
-${!hasPromotion ? '- Detalles de la oferta/promociÃ³n (descuento %, precio, beneficio especÃ­fico)' : 'âœ“ PromociÃ³n definida'}
+${!hasObjective ? '- Objetivo (vender, informar, reactivar, recordar)' : '✓ Objetivo: ' + context?.objective}
+${!hasClientType ? '- Tipo de cliente objetivo (a quién va dirigido)' : '✓ Tipo cliente: ' + context?.clientType}
+${!hasPromotion ? '- Detalles de la oferta/promoción (descuento %, precio, beneficio específico)' : '✓ Promoción definida'}
 
-IMPORTANTE: SIEMPRE pregunta sobre la OFERTA o DESCUENTO especÃ­fico antes de generar propuesta.
-Ejemplo: "Â¿QuÃ© descuento o beneficio quieres ofrecer?"
+IMPORTANTE: SIEMPRE pregunta sobre la OFERTA o DESCUENTO específico antes de generar propuesta.
+Ejemplo: "¿Qué descuento o beneficio quieres ofrecer?"
 
-Haz UNA pregunta corta y natural. No expliques opciones tÃ©cnicas.
+Haz UNA pregunta corta y natural. No expliques opciones técnicas.
 NUNCA generes JSON ni propuestas en esta fase. Solo texto conversacional.
 ` : `
-FASE ACTUAL: GENERACIÃ“N DE PROPUESTA
+FASE ACTUAL: GENERACIÓN DE PROPUESTA
 Contexto confirmado: ${JSON.stringify(context)}
 
-DEBES responder ÃšNICAMENTE con un objeto JSON vÃ¡lido:
+DEBES responder ÚNICAMENTE con un objeto JSON válido:
 
 {
   "phase": "proposal",
-  "chat_message": "Mensaje MUY corto (ej: 'Te preparÃ© una propuesta ðŸ‘‰')",
+  "chat_message": "Mensaje MUY corto (ej: 'Te preparé una propuesta 👉')",
   "panel_propuestas": {
     "estado": "generada",
-    "campaÃ±a": {
+    "campaña": {
       "nombre_sugerido": "string",
       "descripcion": "string",
       "objetivo": "ventas|reactivacion|informativa|recordatorio",
@@ -292,7 +292,7 @@ DEBES responder ÃšNICAMENTE con un objeto JSON vÃ¡lido:
   "segments": [
     {
       "name": "Nombre descriptivo",
-      "description": "Para quÃ© sirve este segmento",
+      "description": "Para qué sirve este segmento",
       "rules": [{"field": "CAMPO_EXISTENTE_DEL_LISTADO", "operator": "equals|contains|greater_than|less_than", "value": "valor"}],
       "estimatedCount": numero_basado_en_datos,
       "saturationRisk": "bajo|medio|alto",
@@ -307,7 +307,7 @@ DEBES responder ÃšNICAMENTE con un objeto JSON vÃ¡lido:
       "main": "Mismo texto que content (para compatibilidad)",
       "intent": "conversacional|urgencia|beneficio",
       "recommended": true,
-      "recommendation_reason": "Una lÃ­nea breve explicando por quÃ© es el mejor",
+      "recommendation_reason": "Una línea breve explicando por qué es el mejor",
       "requiresTemplate": true_si_fuera_de_ventana,
       "templateSuggestion": "plantilla_si_existe"
     },
@@ -337,34 +337,34 @@ DEBES responder ÃšNICAMENTE con un objeto JSON vÃ¡lido:
   }
 }
 
-=== REGLA CRÃTICA DE COPYS ===
+=== REGLA CRÍTICA DE COPYS ===
 SIEMPRE genera EXACTAMENTE 3 variantes de copy con diferentes intenciones:
 - 1 copy "conversacional" (amigable, cercano)
-- 1 copy "urgencia" (sentido de urgencia, acciÃ³n inmediata)
+- 1 copy "urgencia" (sentido de urgencia, acción inmediata)
 - 1 copy "beneficio" (enfocado en el valor/beneficio para el cliente)
 
 SOLO UNA variante debe tener "recommended": true con su "recommendation_reason".
 El "intent" debe coincidir con el tono del mensaje.
 El campo "main" debe ser IGUAL a "content" (para compatibilidad).
 
-=== REGLA CRÃTICA DE CAMPOS ===
-SOLO puedes usar en "rules.field" los campos listados en "CAMPOS DISPONIBLES PARA SEGMENTACIÃ“N".
+=== REGLA CRÍTICA DE CAMPOS ===
+SOLO puedes usar en "rules.field" los campos listados en "CAMPOS DISPONIBLES PARA SEGMENTACIÓN".
 Si el usuario pide segmentar por algo que NO existe como campo:
 - NO generes el segmento
-- En chat_message indica: "Para segmentar por [X], primero necesitas crear un campo personalizado en ConfiguraciÃ³n > Campos de contacto."
-- Deja el array "segments" vacÃ­o o usa solo campos que SÃ existen
+- En chat_message indica: "Para segmentar por [X], primero necesitas crear un campo personalizado en Configuración > Campos de contacto."
+- Deja el array "segments" vacío o usa solo campos que SÍ existen
 
 IMPORTANTE:
 - El "chat_message" debe ser MUY breve, solo confirma que hay propuesta lista
 - NUNCA incluyas el contenido de copys o segmentos en chat_message
 - Los segmentos SOLO pueden usar campos del listado "CAMPOS DISPONIBLES"
-- Estima contactos basÃ¡ndote en los ${totalContacts || 0} contactos activos
-- Si no hay campos personalizados y el usuario pide algo especÃ­fico, indica que necesita crearlos primero
+- Estima contactos basándote en los ${totalContacts || 0} contactos activos
+- Si no hay campos personalizados y el usuario pide algo específico, indica que necesita crearlos primero
 `}
 
 === FALLBACK ===
 Si no puedes generar o actualizar propuestas, responde:
-"No pude aplicar ese cambio automÃ¡ticamente. Â¿Quieres que regenere la propuesta?"`;
+"No pude aplicar ese cambio automáticamente. ¿Quieres que regenere la propuesta?"`;
 
     const callAi = async (extraSystem?: string) => {
       const mergedSystem = extraSystem ? `${systemPrompt}\n\n${extraSystem}` : systemPrompt;
@@ -392,7 +392,7 @@ Si no puedes generar o actualizar propuestas, responde:
           return {
             ok: false as const,
             status: 429,
-            data: { error: 'rate_limit', message: 'LÃ­mite de solicitudes excedido. Por favor, espera un momento.' },
+            data: { error: 'rate_limit', message: 'Límite de solicitudes excedido. Por favor, espera un momento.' },
           };
         }
 
@@ -400,7 +400,7 @@ Si no puedes generar o actualizar propuestas, responde:
           return {
             ok: false as const,
             status: 402,
-            data: { error: 'payment_required', message: 'CrÃ©ditos de IA agotados. Contacta al administrador.' },
+            data: { error: 'payment_required', message: 'Créditos de IA agotados. Contacta al administrador.' },
           };
         }
 
@@ -442,16 +442,16 @@ Si no puedes generar o actualizar propuestas, responde:
                 cooldownRespected: true,
                 notes: [],
               },
-              message: parsed.chat_message || 'Tengo una propuesta lista en el panel derecho ðŸ‘‰',
+              message: parsed.chat_message || 'Tengo una propuesta lista en el panel derecho 👉',
             };
-            parsedChatMessage = parsed.chat_message || 'Tengo una propuesta lista en el panel derecho ðŸ‘‰';
+            parsedChatMessage = parsed.chat_message || 'Tengo una propuesta lista en el panel derecho 👉';
           } else if (parsed.phase === 'update_copy') {
             parsedProposal = {
               phase: 'update_copy',
               copyUpdate: parsed.panel_propuestas || {},
-              message: parsed.chat_message || 'Listo ðŸ‘ Ya apliquÃ© el ajuste en el panel derecho.',
+              message: parsed.chat_message || 'Listo 👍 Ya apliqué el ajuste en el panel derecho.',
             };
-            parsedChatMessage = parsed.chat_message || 'Listo ðŸ‘ Ya apliquÃ© el ajuste en el panel derecho.';
+            parsedChatMessage = parsed.chat_message || 'Listo 👍 Ya apliqué el ajuste en el panel derecho.';
           }
         } catch (e) {
           console.log('Response is not valid JSON, treating as conversation:', e);
@@ -477,7 +477,7 @@ Si no puedes generar o actualizar propuestas, responde:
     const expectsStructured = Boolean(isCopyAdjustment || shouldGenerateProposal);
     if (expectsStructured && !proposal) {
       const retry = await callAi(
-        'REINTENTO OBLIGATORIO: Tu respuesta ANTERIOR no fue un JSON vÃ¡lido. Ahora responde SOLO con un objeto JSON vÃ¡lido, sin texto extra, sin Markdown, sin backticks. Debe seguir exactamente el esquema de la fase actual.'
+        'REINTENTO OBLIGATORIO: Tu respuesta ANTERIOR no fue un JSON válido. Ahora responde SOLO con un objeto JSON válido, sin texto extra, sin Markdown, sin backticks. Debe seguir exactamente el esquema de la fase actual.'
       );
 
       if (retry.ok) {
@@ -490,7 +490,7 @@ Si no puedes generar o actualizar propuestas, responde:
 
     // Safety: if still no proposal, never claim the right panel has content
     if (!proposal && expectsStructured) {
-      chatMessage = 'No pude generar la propuesta automÃ¡ticamente. Â¿Quieres que lo intente de nuevo si escribes â€œGenera propuestaâ€?' ;
+      chatMessage = 'No pude generar la propuesta automáticamente. ¿Quieres que lo intente de nuevo si escribes “Genera propuesta”?' ;
     }
 
     return new Response(

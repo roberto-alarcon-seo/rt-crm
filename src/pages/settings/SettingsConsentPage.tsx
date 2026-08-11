@@ -18,7 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import {
+  useConsentSettings,
+  useUpdateConsentSettings,
+  parseKeywords,
+} from "@/hooks/useConsentSettings";
+import { matchesOptOut } from "@/lib/optOut";
 
 interface ConsentRow {
   id: string;
@@ -35,22 +42,39 @@ interface ConsentRow {
   } | null;
 }
 
-const DEFAULT_KEYWORDS = ["stop", "alto", "baja", "cancelar", "unsubscribe", "no molestar"];
-const DEFAULT_CONFIRM_MSG = "Listo, no volveremos a enviarte mensajes. Si deseas volver a recibir comunicaciones, escríbenos.";
-
 export default function SettingsConsentPage() {
   const { profile } = useAuth();
   const [tab, setTab] = useState<"blocklist" | "rules">("blocklist");
-  
+
   // Blocklist state
   const [rows, setRows] = useState<ConsentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Rules state
-  const [keywords, setKeywords] = useState(DEFAULT_KEYWORDS.join(", "));
-  const [confirmMsg, setConfirmMsg] = useState(DEFAULT_CONFIRM_MSG);
-  const [savingRules, setSavingRules] = useState(false);
+
+  // Reglas: antes vivían en constantes del frontend y "Guardar" no escribía nada.
+  const { data: consentSettings } = useConsentSettings();
+  const updateConsent = useUpdateConsentSettings();
+
+  const [keywords, setKeywords] = useState("");
+  const [confirmMsg, setConfirmMsg] = useState("");
+  const [detectionEnabled, setDetectionEnabled] = useState(true);
+  const [consentText, setConsentText] = useState("");
+  const [privacyUrl, setPrivacyUrl] = useState("");
+  const [privacyEmail, setPrivacyEmail] = useState("");
+  const [showInWidget, setShowInWidget] = useState(true);
+  /** Mensaje de prueba para ver si daría de baja, con las palabras actuales. */
+  const [probe, setProbe] = useState("");
+
+  useEffect(() => {
+    if (!consentSettings) return;
+    setKeywords(consentSettings.opt_out_keywords.join(", "));
+    setConfirmMsg(consentSettings.opt_out_confirmation_message);
+    setDetectionEnabled(consentSettings.opt_out_detection_enabled);
+    setConsentText(consentSettings.consent_text ?? "");
+    setPrivacyUrl(consentSettings.privacy_policy_url ?? "");
+    setPrivacyEmail(consentSettings.privacy_contact_email ?? "");
+    setShowInWidget(consentSettings.show_consent_in_widget);
+  }, [consentSettings]);
 
   const loadBlocklist = useCallback(async () => {
     if (!profile?.tenant_id) return;
@@ -110,17 +134,21 @@ export default function SettingsConsentPage() {
     }
   };
 
-  const handleSaveRules = async () => {
-    setSavingRules(true);
-    try {
-      // For now, just show success - rules are stored in tenant_ai_settings or a new table
-      toast.success('Reglas guardadas correctamente');
-    } catch (err) {
-      console.error('Error saving rules:', err);
-      toast.error('Error al guardar las reglas');
-    } finally {
-      setSavingRules(false);
+  const handleSaveRules = () => {
+    const parsed = parseKeywords(keywords);
+    if (detectionEnabled && parsed.length === 0) {
+      toast.error('Define al menos una palabra clave, o apaga la detección automática');
+      return;
     }
+    updateConsent.mutate({
+      opt_out_keywords: parsed,
+      opt_out_confirmation_message: confirmMsg.trim(),
+      opt_out_detection_enabled: detectionEnabled,
+      consent_text: consentText.trim() || null,
+      privacy_policy_url: privacyUrl.trim() || null,
+      privacy_contact_email: privacyEmail.trim() || null,
+      show_consent_in_widget: showInWidget,
+    });
   };
 
   return (
@@ -223,19 +251,58 @@ export default function SettingsConsentPage() {
             <CardHeader>
               <CardTitle>Palabras clave para Opt-out (Inbound)</CardTitle>
               <CardDescription>
-                Cuando un contacto envía un mensaje con estas palabras, se marca automáticamente como opt-out.
+                Cuando un contacto envía un mensaje con estas palabras, se marca automáticamente como opt-out
+                y se deja de escribirle.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Detectar bajas automáticamente</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Si lo apagas, las bajas solo se pueden registrar a mano desde la ficha del contacto
+                  </p>
+                </div>
+                <Switch
+                  checked={detectionEnabled}
+                  onCheckedChange={setDetectionEnabled}
+                  aria-label="Detectar bajas automáticamente"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="keywords">Palabras clave (separadas por coma)</Label>
                 <Textarea
                   id="keywords"
                   value={keywords}
                   onChange={(e) => setKeywords(e.target.value)}
-                  placeholder="stop, alto, baja, cancelar"
+                  placeholder="baja, stop, alto, cancelar"
                   rows={2}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Se comparan sin distinguir mayúsculas ni acentos, contra el mensaje completo o como palabra suelta.
+                  Nunca a media palabra: "bajarle al presupuesto" no da de baja a nadie.
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <Label htmlFor="optout-probe">Probar un mensaje</Label>
+                <Input
+                  id="optout-probe"
+                  value={probe}
+                  onChange={(e) => setProbe(e.target.value)}
+                  placeholder="Escribe un mensaje como si fueras el cliente"
+                />
+                {probe.trim() && (
+                  matchesOptOut(probe, parseKeywords(keywords)) ? (
+                    <p className="text-xs text-destructive">
+                      Con estas palabras clave, este mensaje daría de baja al contacto.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Este mensaje no daría de baja al contacto.
+                    </p>
+                  )
+                )}
               </div>
             </CardContent>
           </Card>
@@ -244,7 +311,7 @@ export default function SettingsConsentPage() {
             <CardHeader>
               <CardTitle>Mensaje de confirmación</CardTitle>
               <CardDescription>
-                Mensaje que se envía automáticamente cuando se detecta un opt-out.
+                Es el último mensaje que se envía al contacto tras darse de baja.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -257,22 +324,70 @@ export default function SettingsConsentPage() {
                   rows={3}
                 />
               </div>
-
-              <Button onClick={handleSaveRules} disabled={savingRules}>
-                {savingRules ? 'Guardando...' : 'Guardar reglas'}
-              </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-dashed">
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">
-                <strong>Nota:</strong> Las palabras clave se detectan automáticamente en mensajes 
-                entrantes de WhatsApp. Cuando se detecta un opt-out, el contacto se marca como 
-                "opted_out" y se envía el mensaje de confirmación.
-              </p>
+          <Card>
+            <CardHeader>
+              <CardTitle>Texto de consentimiento</CardTitle>
+              <CardDescription>
+                Se muestra al capturar datos, por ejemplo bajo el formulario del chat del sitio web.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="consent-text">Texto</Label>
+                <Textarea
+                  id="consent-text"
+                  value={consentText}
+                  onChange={(e) => setConsentText(e.target.value)}
+                  rows={4}
+                  placeholder="Al compartir tus datos aceptas que…"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="privacy-url">Aviso de privacidad (URL)</Label>
+                  <Input
+                    id="privacy-url"
+                    type="url"
+                    value={privacyUrl}
+                    onChange={(e) => setPrivacyUrl(e.target.value)}
+                    placeholder="https://tusitio.com/privacy"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="privacy-email">Correo para bajas y datos</Label>
+                  <Input
+                    id="privacy-email"
+                    type="email"
+                    value={privacyEmail}
+                    onChange={(e) => setPrivacyEmail(e.target.value)}
+                    placeholder="privacy@tusitio.com"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Mostrarlo en el chat del sitio web</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Aparece bajo el formulario donde el visitante deja sus datos
+                  </p>
+                </div>
+                <Switch
+                  checked={showInWidget}
+                  onCheckedChange={setShowInWidget}
+                  aria-label="Mostrar el consentimiento en el widget"
+                />
+              </div>
             </CardContent>
           </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSaveRules} disabled={updateConsent.isPending}>
+              {updateConsent.isPending ? 'Guardando...' : 'Guardar reglas'}
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </SettingsLayout>

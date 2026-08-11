@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { CampaignLinkBuilder } from "@/components/settings/CampaignLinkBuilder";
 
 export default function SettingsWhatsAppStatus() {
   const { integration, isLoading: twilioLoading, isConnected } = useTwilioIntegration();
@@ -322,6 +323,9 @@ export default function SettingsWhatsAppStatus() {
             </li>
           </ul>
         </div>
+
+        {/* Enlaces de campaña con atribución */}
+        <CampaignLinkBuilder businessPhone={integration?.phone_number ?? null} />
 
         {/* Support Info */}
         <div className="bg-muted/30 rounded-xl border border-border p-4 text-center">

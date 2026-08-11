@@ -89,7 +89,7 @@ serve(async (req) => {
     const isSuperAdmin = roleRow?.global_role === "super_admin";
     const tenantRole = roleRow?.tenant_role;
     if (!isSuperAdmin && tenantRole !== "administrador" && tenantRole !== "manager") {
-      return json({ error: "No tienes permisos para gestionar campaÃ±as de Meta Ads" }, 403);
+      return json({ error: "No tienes permisos para gestionar campañas de Meta Ads" }, 403);
     }
 
     const body = await req.json();
@@ -117,7 +117,7 @@ serve(async (req) => {
           .maybeSingle();
         whatsappNumber = integ?.phone_number ?? null;
         if (!whatsappNumber) {
-          return json({ error: "No se encontrÃ³ nÃºmero de WhatsApp configurado. Verifica tu integraciÃ³n de Twilio en ConfiguraciÃ³n." }, 400);
+          return json({ error: "No se encontró número de WhatsApp configurado. Verifica tu integración de Twilio en Configuración." }, 400);
         }
       }
 
@@ -144,8 +144,8 @@ serve(async (req) => {
       }
 
       const objectiveContext = objective === "MESSAGES"
-        ? `El objetivo es que el lead haga clic y abra WhatsApp directamente para preguntar por la propiedad. El mensaje pre-llenado de WhatsApp mencionarÃ¡ el nombre e ID de la propiedad. El copy debe invitar a escribir por WhatsApp para obtener mÃ¡s informaciÃ³n, precio y disponibilidad.`
-        : `El objetivo es que el lead llene un formulario nativo de Meta con su nombre, telÃ©fono y email para ser contactado por un asesor. El copy debe generar urgencia y destacar los beneficios de la propiedad.`;
+        ? `El objetivo es que el lead haga clic y abra WhatsApp directamente para preguntar por la propiedad. El mensaje pre-llenado de WhatsApp mencionará el nombre e ID de la propiedad. El copy debe invitar a escribir por WhatsApp para obtener más información, precio y disponibilidad.`
+        : `El objetivo es que el lead llene un formulario nativo de Meta con su nombre, teléfono y email para ser contactado por un asesor. El copy debe generar urgencia y destacar los beneficios de la propiedad.`;
       const ctaForObjective = objective === "MESSAGES" ? "WHATSAPP_MESSAGE" : "LEARN_MORE";
 
       const priceFormatted = property.price != null
@@ -156,76 +156,76 @@ serve(async (req) => {
         Math.min(50000, Math.round((Number(property.price) || 1000000) / 100000) * 1000),
       );
       const prompt = `Eres un experto en publicidad inmobiliaria digital
-en MÃ©xico. Tu tarea es crear copies publicitarios para Meta Ads
-altamente especÃ­ficos para esta propiedad exacta.
+en México. Tu tarea es crear copies publicitarios para Meta Ads
+altamente específicos para esta propiedad exacta.
 
 OBJETIVO: ${objectiveContext}
 
 DATOS COMPLETOS DE LA PROPIEDAD:
 - Nombre: ${property.title}
 - Tipo: ${property.property_type ?? "No especificado"}
-- OperaciÃ³n: ${property.operation_type}
+- Operación: ${property.operation_type}
 - Precio: $${priceFormatted} ${property.currency}
-- RecÃ¡maras: ${property.bedrooms ?? "N/A"}
-- BaÃ±os: ${property.bathrooms ?? "N/A"}
-- Superficie: ${property.sq_meters ?? "N/A"} mÂ²
+- Recámaras: ${property.bedrooms ?? "N/A"}
+- Baños: ${property.bathrooms ?? "N/A"}
+- Superficie: ${property.sq_meters ?? "N/A"} m²
 - Zona/Colonia: ${property.zone ?? "N/A"}
-- DirecciÃ³n: ${property.address ?? "No especificada"}
-- DescripciÃ³n completa: ${property.description ?? "Sin descripciÃ³n"}
+- Dirección: ${property.address ?? "No especificada"}
+- Descripción completa: ${property.description ?? "Sin descripción"}
 
 REGLAS PARA LOS COPIES:
-1. Usa datos REALES de la propiedad â€” nunca inventes caracterÃ­sticas
-2. El headline DEBE mencionar algo especÃ­fico: zona, precio, mÂ² o
-   nÃºmero de recÃ¡maras
-3. El texto principal debe crear deseo e incluir llamada a la acciÃ³n
+1. Usa datos REALES de la propiedad — nunca inventes características
+2. El headline DEBE mencionar algo específico: zona, precio, m² o
+   número de recámaras
+3. El texto principal debe crear deseo e incluir llamada a la acción
 4. Cada copy debe tener un enfoque distinto:
-   - Copy 1: CaracterÃ­sticas y datos concretos (precio, mÂ², zona)
-   - Copy 2: Estilo de vida y aspiraciÃ³n (quÃ© se siente vivir ahÃ­)
-   - Copy 3: Urgencia o escasez (oportunidad limitada, inversiÃ³n)
-5. LÃ­mites de caracteres:
-   - headline: mÃ¡ximo 40 caracteres (tÃ­tulo debajo de la imagen)
-   - primary_text: mÃ¡ximo 400 caracteres (texto encima de la imagen,
-     debe incluir caracterÃ­sticas completas con emojis como bullets)
-   - description: mÃ¡ximo 30 caracteres
+   - Copy 1: Características y datos concretos (precio, m², zona)
+   - Copy 2: Estilo de vida y aspiración (qué se siente vivir ahí)
+   - Copy 3: Urgencia o escasez (oportunidad limitada, inversión)
+5. Límites de caracteres:
+   - headline: máximo 40 caracteres (título debajo de la imagen)
+   - primary_text: máximo 400 caracteres (texto encima de la imagen,
+     debe incluir características completas con emojis como bullets)
+   - description: máximo 30 caracteres
 
 REGLAS ADICIONALES DE FORMATO:
 - SIEMPRE incluye 1-2 emojis relevantes en cada copy
-  (ðŸ  casa/depto, ðŸŒŸ lujo, ðŸ’° precio, ðŸ“ ubicaciÃ³n, ðŸ”‘ entrega,
-   ðŸŠ amenidades, ðŸš— estacionamiento, ðŸŒ³ jardÃ­n, etc.)
+  (ðŸ  casa/depto, 🌟 lujo, 💰 precio, ðŸ“ ubicación, 🔑 entrega,
+   ðŸŠ amenidades, 🚗 estacionamiento, 🌳 jardín, etc.)
 - El precio SIEMPRE debe aparecer formateado en el copy cuando sea
   relevante: "$${priceFormatted} ${property.currency}"
-- Menciona SIEMPRE al menos un dato numÃ©rico concreto:
-  mÂ², recÃ¡maras, baÃ±os o precio
+- Menciona SIEMPRE al menos un dato numérico concreto:
+  m², recámaras, baños o precio
 - Los emojis van al INICIO del headline o intercalados en el texto,
   nunca al final
-- Ejemplo de headline bueno: "ðŸ  Penthouse 210mÂ² en Chico Reservado"
+- Ejemplo de headline bueno: "ðŸ  Penthouse 210m² en Chico Reservado"
 - Ejemplo de headline malo: "Hermosa propiedad disponible"
 
 EJEMPLO DE COPY COMPLETO ESPERADO PARA INMOBILIARIA:
 {
-  "headline": "ðŸ  Penthouse 210mÂ² Â· Chico Reservado",
-  "primary_text": "ðŸŒŸ Penthouse Vista GalÃ¡ctica â€” La joya de Chico Reservado\\n\\nðŸ“ 210 mÂ² de diseÃ±o arquitectÃ³nico exclusivo\\nðŸ› 3 recÃ¡maras con vestidor en suite\\nðŸš¿ 4 baÃ±os completos de lujo\\nðŸŒ¿ Terraza privada con vista panorÃ¡mica\\nðŸŠ Acceso a amenidades de primer nivel\\nðŸš— 2 lugares de estacionamiento\\n\\nðŸ’° Precio: $2,500,000,000 COP\\nðŸ“ Chico Reservado, BogotÃ¡\\n\\nÂ¿Te interesa conocerlo? Â¡EscrÃ­benos ahora y agenda tu visita! ðŸ”‘",
+  "headline": "ðŸ  Penthouse 210m² · Chico Reservado",
+  "primary_text": "🌟 Penthouse Vista Galáctica — La joya de Chico Reservado\\n\\nðŸ“ 210 m² de diseño arquitectónico exclusivo\\nðŸ› 3 recámaras con vestidor en suite\\n🚿 4 baños completos de lujo\\n🌿 Terraza privada con vista panorámica\\nðŸŠ Acceso a amenidades de primer nivel\\n🚗 2 lugares de estacionamiento\\n\\n💰 Precio: $2,500,000,000 COP\\nðŸ“ Chico Reservado, Bogotá\\n\\n¿Te interesa conocerlo? ¡Escríbenos ahora y agenda tu visita! 🔑",
   "description": "Agenda tu visita hoy"
 }
 
-REGLA CLAVE: El primary_text debe incluir TODAS las caracterÃ­sticas
+REGLA CLAVE: El primary_text debe incluir TODAS las características
 importantes de la propiedad usando emojis como bullets visuales.
-Formato: emoji + caracterÃ­stica, una por lÃ­nea (usa \\n para saltos).
-Incluye SIEMPRE: mÂ², recÃ¡maras, baÃ±os, amenidades destacadas, precio
-formateado y llamada a la acciÃ³n.
+Formato: emoji + característica, una por línea (usa \\n para saltos).
+Incluye SIEMPRE: m², recámaras, baños, amenidades destacadas, precio
+formateado y llamada a la acción.
 
-INTERESES SUGERIDOS: elige los mÃ¡s relevantes segÃºn el tipo de
+INTERESES SUGERIDOS: elige los más relevantes según el tipo de
 propiedad y precio. Para propiedades de lujo (>$3M MXN) incluye
-intereses de inversiÃ³n. Para propiedades medias incluye primera
-vivienda. Para rentas incluye bÃºsqueda de departamento.
+intereses de inversión. Para propiedades medias incluye primera
+vivienda. Para rentas incluye búsqueda de departamento.
 
-Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
+Retorna ÚNICAMENTE este JSON sin texto adicional ni backticks:
 {
   "name": "nombre descriptivo con zona y tipo",
   "copies": [
     {
-      "headline": "especÃ­fico con dato real de la propiedad",
-      "primary_text": "texto que usa caracterÃ­sticas reales",
+      "headline": "específico con dato real de la propiedad",
+      "primary_text": "texto que usa características reales",
       "description": "corto y directo"
     },
     {
@@ -235,7 +235,7 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
     },
     {
       "headline": "urgencia con dato real del precio o zona",
-      "primary_text": "crea urgencia, menciona oportunidad Ãºnica",
+      "primary_text": "crea urgencia, menciona oportunidad única",
       "description": "corto y directo"
     }
   ],
@@ -244,13 +244,13 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
   "age_max": 60,
   "genders": ["1", "2"],
   "geo_locations": {
-    "cities": [{ "key": "ciudad_key", "name": "${property.zone ?? "Ciudad de MÃ©xico"}" }],
+    "cities": [{ "key": "ciudad_key", "name": "${property.zone ?? "Ciudad de México"}" }],
     "countries": ["MX"]
   },
   "interests": [
-    { "id": "6003107902433", "name": "Bienes raÃ­ces" },
+    { "id": "6003107902433", "name": "Bienes raíces" },
     { "id": "6002714398172", "name": "Compra de vivienda" },
-    { "id": "6003377666416", "name": "InversiÃ³n inmobiliaria" }
+    { "id": "6003377666416", "name": "Inversión inmobiliaria" }
   ],
   "daily_budget_cents": ${suggestedBudget},
   "lead_form_fields": [
@@ -259,9 +259,9 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
     { "type": "EMAIL" }
   ],
   "recommendations": [
-    "recomendaciÃ³n especÃ­fica basada en el precio $${priceFormatted} y la zona ${property.zone ?? "N/A"}",
-    "recomendaciÃ³n sobre el tipo ${property.property_type ?? "propiedad"} en ${property.operation_type}",
-    "recomendaciÃ³n sobre presupuesto publicitario para este segmento de precio"
+    "recomendación específica basada en el precio $${priceFormatted} y la zona ${property.zone ?? "N/A"}",
+    "recomendación sobre el tipo ${property.property_type ?? "propiedad"} en ${property.operation_type}",
+    "recomendación sobre presupuesto publicitario para este segmento de precio"
   ]
 }`;
 
@@ -277,8 +277,8 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
           max_tokens: 3000,
         }),
       });
-      if (aiRes.status === 429) return json({ error: "LÃ­mite de uso de IA alcanzado, intenta en unos minutos" }, 429);
-      if (aiRes.status === 402) return json({ error: "CrÃ©ditos de IA agotados, agrega mÃ¡s en tu workspace" }, 402);
+      if (aiRes.status === 429) return json({ error: "Límite de uso de IA alcanzado, intenta en unos minutos" }, 429);
+      if (aiRes.status === 402) return json({ error: "Créditos de IA agotados, agrega más en tu workspace" }, 402);
       if (!aiRes.ok) {
         const t = await aiRes.text();
         return json({ error: `Error de IA: ${t.slice(0, 200)}` }, 500);
@@ -289,7 +289,7 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
       try {
         parsed = JSON.parse(stripJsonFences(content));
       } catch {
-        return json({ error: "La IA devolviÃ³ un formato no vÃ¡lido" }, 500);
+        return json({ error: "La IA devolvió un formato no válido" }, 500);
       }
 
       const copiesRaw = Array.isArray((parsed as any).copies)
@@ -303,7 +303,7 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
         }))
         .filter((c) => c.headline.length > 0 && c.primary_text.length > 0);
       if (validCopies.length === 0) {
-        return json({ error: "La IA no generÃ³ copies vÃ¡lidos. Intenta de nuevo." }, 500);
+        return json({ error: "La IA no generó copies válidos. Intenta de nuevo." }, 500);
       }
       while (validCopies.length < 3) {
         validCopies.push(validCopies[validCopies.length - 1]);
@@ -329,7 +329,7 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
         campaign_objective: objective,
         whatsapp_phone_number: whatsappNumber,
         facebook_page_id: facebookPageId,
-        name: String(parsed.name ?? `CampaÃ±a ${property.title}`).slice(0, 200),
+        name: String(parsed.name ?? `Campaña ${property.title}`).slice(0, 200),
         headline: firstCopy.headline,
         primary_text: firstCopy.primary_text,
         description: firstCopy.description || null,
@@ -371,7 +371,7 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
         .eq("id", body.campaign_id)
         .eq("tenant_id", tenantId)
         .maybeSingle();
-      if (!campaign) return json({ error: "CampaÃ±a no encontrada" }, 404);
+      if (!campaign) return json({ error: "Campaña no encontrada" }, 404);
 
       const { data: connection } = await admin
         .from("meta_ads_connections")
@@ -382,12 +382,12 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
       if (!connection) return json({ error: "Conecta tu cuenta de Meta Ads primero" }, 400);
 
       const token = decryptToken(connection.access_token_encrypted as string);
-      if (!token) return json({ error: "Token de Meta invÃ¡lido, reconecta tu cuenta" }, 400);
+      if (!token) return json({ error: "Token de Meta inválido, reconecta tu cuenta" }, 400);
 
       const adAccountId = connection.ad_account_id as string;
 
       if (action === "pause" || action === "resume") {
-        if (!campaign.meta_campaign_id) return json({ error: "La campaÃ±a no estÃ¡ publicada en Meta" }, 400);
+        if (!campaign.meta_campaign_id) return json({ error: "La campaña no está publicada en Meta" }, 400);
         try {
           await metaPost(`/${campaign.meta_campaign_id}`, {
             status: action === "pause" ? "PAUSED" : "ACTIVE",
@@ -413,13 +413,13 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
       try {
         if (campaign.campaign_objective === "MESSAGES") {
           if (!campaign.facebook_page_id) {
-            throw new Error("Falta PÃ¡gina de Facebook para campaÃ±a de Mensajes");
+            throw new Error("Falta Página de Facebook para campaña de Mensajes");
           }
           if (!campaign.whatsapp_phone_number) {
-            throw new Error("Falta nÃºmero de WhatsApp para campaÃ±a de Mensajes");
+            throw new Error("Falta número de WhatsApp para campaña de Mensajes");
           }
 
-          // Construir mensaje pre-llenado con tÃ­tulo e ID de propiedad
+          // Construir mensaje pre-llenado con título e ID de propiedad
           const { data: propertyForMsg } = await admin
             .from("properties")
             .select("title, code")
@@ -524,7 +524,7 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
           questions: JSON.stringify(campaign.lead_form_fields ?? []),
           privacy_policy: JSON.stringify({
             url: "https://brokia24.com/privacidad",
-            link_text: "PolÃ­tica de privacidad",
+            link_text: "Política de privacidad",
           }),
           access_token: token,
         });
@@ -602,7 +602,7 @@ Retorna ÃšNICAMENTE este JSON sin texto adicional ni backticks:
       }
     }
 
-    return json({ error: "AcciÃ³n no soportada" }, 400);
+    return json({ error: "Acción no soportada" }, 400);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Error inesperado";
     return json({ error: msg }, 500);

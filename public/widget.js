@@ -157,6 +157,8 @@
       '#rtw-send:hover{opacity:.85}',
       '#rtw-send svg{width:15px;height:15px;fill:#fff}',
       '#rtw-send:disabled{opacity:.45;cursor:not-allowed}',
+      '#rtw-consent{font-size:10px;line-height:1.45;color:' + creditTxt + ';padding:6px 12px 2px;background:' + bgFoot + '}',
+      '#rtw-consent a{color:inherit;text-decoration:underline}',
       '#rtw-credit{text-align:center;font-size:10px;color:' + creditTxt + ';padding:3px 0 6px;background:' + bgFoot + '}',
     ];
 
@@ -243,6 +245,9 @@
           '<button id="rtw-send" aria-label="Enviar"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>' +
         '</div>' +
       '</div>' +
+      // Aviso de tratamiento de datos (§7.3). Se llena tras el init; si el
+      // tenant no configuró texto, el bloque queda oculto.
+      '<div id="rtw-consent" hidden></div>' +
       '<div id="rtw-credit">' + creditLabel + '</div>'
     );
   }
@@ -493,6 +498,19 @@
 
         injectCSS(color, pos, mode, theme);
         buildDOM(name, logoUrl, iconName, mode, poweredByText, subtitle, ctaButtons, productChips);
+
+        // Aviso de tratamiento de datos (§7.3)
+        var consentText = config.consent_text || '';
+        var privacyUrl  = config.privacy_policy_url || '';
+        var consentEl   = document.getElementById('rtw-consent');
+        if (consentEl && consentText) {
+          var consentHTML = esc(consentText);
+          if (privacyUrl) {
+            consentHTML += ' <a href="' + esc(privacyUrl) + '" target="_blank" rel="noopener">Aviso de privacidad</a>.';
+          }
+          consentEl.innerHTML = consentHTML;
+          consentEl.hidden = false;
+        }
 
         if (history.length > 0) {
           history.forEach(function (m) { addMsg(m.role === 'user' ? 'user' : 'bot', m.content); });

@@ -5672,6 +5672,56 @@ export type Database = {
           },
         ]
       }
+      tenant_consent_settings: {
+        Row: {
+          consent_text: string | null
+          created_at: string
+          id: string
+          opt_out_confirmation_message: string
+          opt_out_detection_enabled: boolean
+          opt_out_keywords: string[]
+          privacy_contact_email: string | null
+          privacy_policy_url: string | null
+          show_consent_in_widget: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          consent_text?: string | null
+          created_at?: string
+          id?: string
+          opt_out_confirmation_message?: string
+          opt_out_detection_enabled?: boolean
+          opt_out_keywords?: string[]
+          privacy_contact_email?: string | null
+          privacy_policy_url?: string | null
+          show_consent_in_widget?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          consent_text?: string | null
+          created_at?: string
+          id?: string
+          opt_out_confirmation_message?: string
+          opt_out_detection_enabled?: boolean
+          opt_out_keywords?: string[]
+          privacy_contact_email?: string | null
+          privacy_policy_url?: string | null
+          show_consent_in_widget?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_consent_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_opportunity_settings: {
         Row: {
           alert_after_days: number

@@ -16,6 +16,80 @@ const CONFIG = {
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// ========== BAJA / OPT-OUT ==========
+
+/** Quita acentos y baja a minúsculas: "BAJA" y "bája" deben empatar igual. */
+function normalizeForMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * ¿El mensaje pide la baja?
+ *
+ * Se acepta si el mensaje ES la palabra clave (el caso normal: el cliente
+ * responde solo "BAJA") o si aparece como palabra suelta. No se usa `includes`
+ * a secas porque "no molestar" dentro de "no molestar es imposible con ustedes"
+ * sería una baja, pero "bajarle al presupuesto" NO debe dar de baja a nadie:
+ * exigir límites de palabra evita ese falso positivo.
+ */
+function matchesOptOut(messageBody: string, keywords: string[]): boolean {
+  const text = normalizeForMatch(messageBody);
+  if (!text) return false;
+
+  for (const raw of keywords) {
+    const keyword = normalizeForMatch(raw);
+    if (!keyword) continue;
+    if (text === keyword) return true;
+    const asWord = new RegExp(`(?:^|\\s)${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`, 'u');
+    if (asWord.test(text)) return true;
+  }
+  return false;
+}
+
+// ========== ATRIBUCIÓN DE CAMPAÑA ==========
+
+/**
+ * Los enlaces wa.me no admiten parámetros propios: al abrir WhatsApp se pierden
+ * los UTMs de la campaña y el lead entra sin origen. El generador de enlaces del
+ * CRM los codifica al final del texto prellenado como `[rt:src=…|cmp=…]`; aquí
+ * se leen y se quitan del cuerpo antes de guardarlo.
+ *
+ * Copia de src/lib/campaignLink.ts (Deno no puede importar de src/); ese archivo
+ * es el que tiene las pruebas. Si cambia el formato, cámbialo en los dos lados.
+ */
+const TRACKING_KEY_TO_UTM: Record<string, string> = {
+  src: 'utm_source',
+  med: 'utm_medium',
+  cmp: 'utm_campaign',
+  cnt: 'utm_content',
+  trm: 'utm_term',
+};
+
+function parseTrackingTag(messageBody: string): {
+  attribution: Record<string, string>;
+  cleanBody: string;
+} {
+  const match = messageBody.match(/\[rt:([^\]]*)\]/);
+  if (!match) return { attribution: {}, cleanBody: messageBody };
+
+  const attribution: Record<string, string> = {};
+  for (const pair of match[1].split('|')) {
+    const [key, ...rest] = pair.split('=');
+    const utm = TRACKING_KEY_TO_UTM[(key ?? '').trim()];
+    const value = rest.join('=').trim();
+    if (utm && value) attribution[utm] = value;
+  }
+
+  const cleanBody = messageBody.replace(match[0], '').replace(/\s+/g, ' ').trim();
+  return { attribution, cleanBody };
+}
+
 // ========== DISPATCHER: intent classification ==========
 
 const CAPTACION_KEYWORDS = [
@@ -141,7 +215,10 @@ serve(async (req) => {
     const messageSid = body.MessageSid || body.SmsSid;
     const from = body.From;
     const to = body.To;
-    const messageBody = body.Body || '';
+    // El marcador de campaña se separa del texto: el cliente nunca debe verlo
+    // en su historial ni la IA leerlo como parte de la conversación.
+    const rawBody = body.Body || '';
+    const { attribution: campaignAttribution, cleanBody: messageBody } = parseTrackingTag(rawBody);
     const numMedia = parseInt(body.NumMedia || '0');
     const accountSid = body.AccountSid;
     const profileName = body.ProfileName || null;
@@ -369,9 +446,94 @@ serve(async (req) => {
       return emptyTwiml();
     }
 
+    // ── Atribución de campaña ────────────────────────────────────────────────
+    // Solo la primera vez: si el contacto ya tiene atribución registrada, un
+    // segundo clic en otra campaña no debe reescribir su origen original.
+    if (Object.keys(campaignAttribution).length > 0) {
+      const { data: existingAttribution } = await supabase
+        .from('attribution')
+        .select('id')
+        .eq('contact_id', contactId)
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingAttribution) {
+        const { error: attrError } = await supabase.from('attribution').insert({
+          tenant_id: tenantId,
+          contact_id: contactId,
+          ...campaignAttribution,
+          entry_channel: 'whatsapp',
+          captured_at: new Date().toISOString(),
+        });
+        if (attrError) console.error('❌ No se pudo registrar la atribución:', attrError);
+        else console.log('📊 Atribución de campaña registrada:', campaignAttribution);
+      }
+    }
+
+    // ── Baja / opt-out ───────────────────────────────────────────────────────
+    // Va antes de cualquier procesamiento de IA: si el contacto pide que no se
+    // le escriba, lo único que sale es la confirmación. Hasta ahora las palabras
+    // de baja solo existían como constantes en el frontend y nadie las leía, así
+    // que responder "BAJA" no tenía ningún efecto.
+    if (messageBody.trim()) {
+      const { data: consentCfg } = await supabase
+        .from('tenant_consent_settings')
+        .select('opt_out_keywords, opt_out_confirmation_message, opt_out_detection_enabled')
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      const detectionOn = consentCfg?.opt_out_detection_enabled ?? false;
+      const keywords: string[] = consentCfg?.opt_out_keywords ?? [];
+
+      if (detectionOn && keywords.length > 0 && matchesOptOut(messageBody, keywords)) {
+        console.log(`🚫 Baja detectada para el contacto ${contactId}`);
+
+        await supabase.from('contact_consents').upsert({
+          tenant_id: tenantId,
+          contact_id: contactId,
+          channel: 'whatsapp',
+          status: 'opted_out',
+          source: 'inbound_keyword',
+          reason: messageBody.slice(0, 200),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'tenant_id,contact_id,channel' });
+
+        await supabase.from('contact_consent_events').insert({
+          tenant_id: tenantId,
+          contact_id: contactId,
+          new_status: 'opted_out',
+          actor_type: 'system',
+          source: 'inbound_keyword',
+          reason: messageBody.slice(0, 200),
+          metadata: { message_sid: messageSid },
+        });
+
+        await supabase.from('contacts')
+          .update({ opt_in_status: 'opt_out', operational_status: 'DND' })
+          .eq('id', contactId)
+          .eq('tenant_id', tenantId);
+
+        // Se apaga la IA de la conversación: no debe seguir conversando.
+        await supabase.from('conversations')
+          .update({ ai_enabled: false, ai_state: 'paused', ai_pause_reason: 'opted_out' })
+          .eq('id', conversationId);
+
+        const confirmation = (consentCfg?.opt_out_confirmation_message ?? '').trim();
+        if (confirmation) {
+          await sendAIResponse(
+            supabase, tenantId, conversationId, businessPhone, customerPhone,
+            confirmation, newMessage.id,
+          );
+        }
+
+        console.log('🚫 Baja registrada, no se procesa nada más para este mensaje');
+        return emptyTwiml();
+      }
+    }
+
     // Check if tenant can send (using centralized function)
     const { data: canSendResult } = await supabase.rpc('can_send_message', { p_tenant_id: tenantId });
-    
+
     if (!canSendResult) {
       console.log('⚠️ No balance - cannot process inbound');
       return emptyTwiml();

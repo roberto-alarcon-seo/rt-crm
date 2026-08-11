@@ -30,24 +30,24 @@ serve(async (req) => {
     }
 
     const toneInstruction = tone === 'informal'
-      ? '- Usa un tono informal, tutea al cliente (habla de "tÃº"), sÃ© cercano y amigable pero profesional'
-      : '- Usa un tono formal, trata al cliente de "usted", sÃ© profesional y respetuoso';
+      ? '- Usa un tono informal, tutea al cliente (habla de "tú"), sé cercano y amigable pero profesional'
+      : '- Usa un tono formal, trata al cliente de "usted", sé profesional y respetuoso';
 
-    const systemPrompt = `Eres un asistente de redacciÃ³n para agentes humanos de atenciÃ³n al cliente.
-Tu tarea es mejorar la claridad, ortografÃ­a y tono del mensaje, manteniendo EXACTAMENTE la intenciÃ³n original.
-No agregues informaciÃ³n nueva ni promesas.
+    const systemPrompt = `Eres un asistente de redacción para agentes humanos de atención al cliente.
+Tu tarea es mejorar la claridad, ortografía y tono del mensaje, manteniendo EXACTAMENTE la intención original.
+No agregues información nueva ni promesas.
 
 Instrucciones:
-- Corrige errores ortogrÃ¡ficos y gramaticales
+- Corrige errores ortográficos y gramaticales
 - Mejora la claridad del mensaje
 ${toneInstruction}
-- MantÃ©n el idioma original del texto
+- Mantén el idioma original del texto
 - No inventes datos
 - No hagas preguntas adicionales
-- Si el mensaje ya estÃ¡ bien escrito, realiza mejoras mÃ­nimas o devuÃ©lvelo tal cual
-- MantÃ©n el mensaje conciso, no lo hagas mÃ¡s largo innecesariamente`;
+- Si el mensaje ya está bien escrito, realiza mejoras mínimas o devuélvelo tal cual
+- Mantén el mensaje conciso, no lo hagas más largo innecesariamente`;
 
-    const userPrompt = `Mejora este mensaje de atenciÃ³n al cliente:
+    const userPrompt = `Mejora este mensaje de atención al cliente:
 
 Texto original: "${originalText}"
 ${contactName ? `Nombre del cliente: ${contactName}` : ''}
@@ -78,13 +78,13 @@ Responde SOLO con el texto mejorado, sin explicaciones ni comillas adicionales.`
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: 'LÃ­mite de solicitudes alcanzado, intenta de nuevo en unos segundos' }),
+          JSON.stringify({ error: 'Límite de solicitudes alcanzado, intenta de nuevo en unos segundos' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: 'CrÃ©ditos de IA agotados' }),
+          JSON.stringify({ error: 'Créditos de IA agotados' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

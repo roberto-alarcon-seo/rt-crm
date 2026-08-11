@@ -39,10 +39,10 @@ async function triggerAssignment(
       p_assigned_by: null,
       p_reason: `ai_handoff:${reason}`,
     });
-    if (error) console.warn('âš ï¸ assignment error:', error);
-    else console.log('ðŸŽ¯ AI handoff assignment:', data?.[0]);
+    if (error) console.warn('⚠️ assignment error:', error);
+    else console.log('🎯 AI handoff assignment:', data?.[0]);
   } catch (e) {
-    console.warn('âš ï¸ assignment skipped:', e);
+    console.warn('⚠️ assignment skipped:', e);
   }
 }
 
@@ -81,25 +81,25 @@ interface KnowledgeEntry {
 
 // ===== Regional / conversation helpers =====
 const REGION_CONTEXT: Record<string, { country: string; currency: string; modismos: string }> = {
-  MX: { country: 'MÃ©xico', currency: 'MXN ($)', modismos: 'EspaÃ±ol de MÃ©xico. USA: "departamento", "recÃ¡mara", "alberca", "cochera", "Infonavit/Fovissste", "enganche", "mensualidades", "ahorita", "platicar". EVITA: "piso", "habitaciÃ³n", "vale", "vosotros", "tÃ­o/tÃ­a".' },
-  CO: { country: 'Colombia', currency: 'COP ($)', modismos: 'EspaÃ±ol colombiano. USA: "apartamento", "habitaciÃ³n/alcoba", "parqueadero", "subsidio MiCasaYa", "cuota inicial", "arriendo", "chÃ©vere", "con mucho gusto", "le cuento queâ€¦". EVITA: "departamento", "recÃ¡mara", "piso", "vale", "vosotros".' },
-  PE: { country: 'PerÃº', currency: 'PEN (S/)', modismos: 'EspaÃ±ol peruano. USA: "departamento", "dormitorio", "cochera", "crÃ©dito Mivivienda/Techo Propio", "inicial", "chÃ©vere", "bacÃ¡n". EVITA: "piso", "vale", "vosotros".' },
-  AR: { country: 'Argentina', currency: 'ARS ($)', modismos: 'EspaÃ±ol rioplatense. USA "vos" y conjugaciÃ³n voseante (tenÃ©s, querÃ©s, podÃ©s). USA: "departamento", "ambientes", "expensas", "cochera", "che", "dale". EVITA: "tÃº", "vosotros", "piso".' },
-  CL: { country: 'Chile', currency: 'CLP ($)', modismos: 'EspaÃ±ol chileno. USA: "departamento", "dormitorio", "estacionamiento", "UF", "pie", "bacÃ¡n". EVITA: "piso", "recÃ¡mara", "vale", "vosotros".' },
-  ES: { country: 'EspaÃ±a', currency: 'EUR (â‚¬)', modismos: 'OBLIGATORIO ESPAÃ‘OL DE ESPAÃ‘A (castellano peninsular). USA SIEMPRE: "piso" (NUNCA "departamento" ni "apartamento"), "habitaciÃ³n" (NUNCA "recÃ¡mara"/"dormitorio" como tÃ©rmino principal), "salÃ³n", "cuarto de baÃ±o/aseo", "plaza de garaje", "trastero", "comunidad de propietarios", "IBI", "arras", "hipoteca", "ascensor". USA expresiones locales: "vale", "venga", "estupendo", "genial", "quÃ© tal", "encantado/a", "un saludo cordial". USA "coger", "ordenador", "mÃ³vil", "coche". PROHIBIDO: "ahorita", "platicar", "departamento", "recÃ¡mara", "carro", "celular", "computadora", "okey", "sale", "chÃ©vere", "parqueadero", "alberca" (di "piscina"), "cochera" (di "garaje"), "enganche" (di "entrada"), "mensualidades" (di "cuota mensual/letra").' },
-  US: { country: 'Estados Unidos (hispano)', currency: 'USD ($)', modismos: 'EspaÃ±ol neutro latino, tÃ©rminos bilingÃ¼es si aplica.' },
+  MX: { country: 'México', currency: 'MXN ($)', modismos: 'Español de México. USA: "departamento", "recámara", "alberca", "cochera", "Infonavit/Fovissste", "enganche", "mensualidades", "ahorita", "platicar". EVITA: "piso", "habitación", "vale", "vosotros", "tío/tía".' },
+  CO: { country: 'Colombia', currency: 'COP ($)', modismos: 'Español colombiano. USA: "apartamento", "habitación/alcoba", "parqueadero", "subsidio MiCasaYa", "cuota inicial", "arriendo", "chévere", "con mucho gusto", "le cuento que…". EVITA: "departamento", "recámara", "piso", "vale", "vosotros".' },
+  PE: { country: 'Perú', currency: 'PEN (S/)', modismos: 'Español peruano. USA: "departamento", "dormitorio", "cochera", "crédito Mivivienda/Techo Propio", "inicial", "chévere", "bacán". EVITA: "piso", "vale", "vosotros".' },
+  AR: { country: 'Argentina', currency: 'ARS ($)', modismos: 'Español rioplatense. USA "vos" y conjugación voseante (tenés, querés, podés). USA: "departamento", "ambientes", "expensas", "cochera", "che", "dale". EVITA: "tú", "vosotros", "piso".' },
+  CL: { country: 'Chile', currency: 'CLP ($)', modismos: 'Español chileno. USA: "departamento", "dormitorio", "estacionamiento", "UF", "pie", "bacán". EVITA: "piso", "recámara", "vale", "vosotros".' },
+  ES: { country: 'España', currency: 'EUR (€)', modismos: 'OBLIGATORIO ESPAÑOL DE ESPAÑA (castellano peninsular). USA SIEMPRE: "piso" (NUNCA "departamento" ni "apartamento"), "habitación" (NUNCA "recámara"/"dormitorio" como término principal), "salón", "cuarto de baño/aseo", "plaza de garaje", "trastero", "comunidad de propietarios", "IBI", "arras", "hipoteca", "ascensor". USA expresiones locales: "vale", "venga", "estupendo", "genial", "qué tal", "encantado/a", "un saludo cordial". USA "coger", "ordenador", "móvil", "coche". PROHIBIDO: "ahorita", "platicar", "departamento", "recámara", "carro", "celular", "computadora", "okey", "sale", "chévere", "parqueadero", "alberca" (di "piscina"), "cochera" (di "garaje"), "enganche" (di "entrada"), "mensualidades" (di "cuota mensual/letra").' },
+  US: { country: 'Estados Unidos (hispano)', currency: 'USD ($)', modismos: 'Español neutro latino, términos bilingües si aplica.' },
 };
 
 const FORMALITY_TEXT: Record<string, string> = {
-  tu: 'Trata al cliente de "tÃº" (informal cercano).',
-  usted: 'Trata al cliente de "usted" (formal y respetuoso). Nunca uses "tÃº".',
+  tu: 'Trata al cliente de "tú" (informal cercano).',
+  usted: 'Trata al cliente de "usted" (formal y respetuoso). Nunca uses "tú".',
   vos: 'Trata al cliente de "vos" (informal rioplatense).',
 };
 
 const LANGUAGE_TEXT: Record<string, string> = {
-  es: 'Responde SIEMPRE en espaÃ±ol.',
-  en: 'Responde SIEMPRE en inglÃ©s.',
-  pt: 'Responde SIEMPRE en portuguÃ©s.',
+  es: 'Responde SIEMPRE en español.',
+  en: 'Responde SIEMPRE en inglés.',
+  pt: 'Responde SIEMPRE en portugués.',
 };
 
 function stripEmojis(text: string): string {
@@ -110,7 +110,7 @@ function enforceMaxLength(text: string, maxLen: number): string {
   if (!maxLen || text.length <= maxLen) return text;
   const cut = text.slice(0, maxLen);
   const lastSpace = cut.lastIndexOf(' ');
-  return (lastSpace > maxLen * 0.7 ? cut.slice(0, lastSpace) : cut).trim() + 'â€¦';
+  return (lastSpace > maxLen * 0.7 ? cut.slice(0, lastSpace) : cut).trim() + '…';
 }
 
 function isWithinBusinessHours(bh: any): { open: boolean; configured: boolean } {
@@ -157,7 +157,7 @@ serve(async (req) => {
     const lovableApiKey = Deno.env.get('OPENROUTER_API_KEY');
 
     if (!lovableApiKey) {
-      console.error('âŒ OPENROUTER_API_KEY not configured');
+      console.error('❌Œ OPENROUTER_API_KEY not configured');
       throw new Error('OPENROUTER_API_KEY not configured');
     }
 
@@ -250,7 +250,7 @@ serve(async (req) => {
     const bhCheck = isWithinBusinessHours(aiSettings.business_hours);
     const handoffTriggers = aiSettings.handoff_triggers || {};
     if (bhCheck.configured && !bhCheck.open && handoffTriggers.on_after_hours !== false) {
-      console.log('â° Out of business hours, sending OOH message');
+      console.log('⏰ Out of business hours, sending OOH message');
       const oohMsg = aiSettings.out_of_hours_message
         || 'Gracias por escribirnos. Te responderemos en cuanto abramos.';
       const customerOoh = aiSettings.use_customer_name && contact_name
@@ -377,7 +377,7 @@ serve(async (req) => {
     if (handoffTriggers.on_max_turns !== false) {
       const aiTurns = conversationHistory.filter(m => m.role === 'assistant').length;
       if (aiTurns >= maxTurns) {
-        console.log(`ðŸ¤ Max AI turns reached (${aiTurns}/${maxTurns}), escalating`);
+        console.log(`🤝 Max AI turns reached (${aiTurns}/${maxTurns}), escalating`);
         await supabase.from('conversations').update({
           ai_enabled: false,
           ai_state: 'escalated',
@@ -413,7 +413,7 @@ serve(async (req) => {
         const portalIdsText = portalIds.length > 0
           ? `\n  IDs en portales externos: ${portalIds.map(pid => pid.portal_name ? `${pid.portal_id} (${pid.portal_name})` : pid.portal_id).join(', ')}`
           : '';
-        const creditText = p.accepted_credits?.length ? `CrÃ©ditos aceptados: ${p.accepted_credits.join(', ')}` : '';
+        const creditText = p.accepted_credits?.length ? `Créditos aceptados: ${p.accepted_credits.join(', ')}` : '';
         const maintenanceText = p.maintenance_fee ? `Mantenimiento: $${p.maintenance_fee.toLocaleString()} ${p.currency}/mes` : '';
         const visitText = p.visit_availability || '';
         const aiPromptText = p.ai_prompt ? `\n  Instrucciones especiales: ${p.ai_prompt}` : '';
@@ -425,24 +425,24 @@ serve(async (req) => {
           .slice(0, 10);
         const hasPhotos = uniqueImages.length > 0;
         const photosText = hasPhotos 
-          ? `\n  Fotos disponibles: SÃ­ (${uniqueImages.length} fotos). Si el cliente pide fotos, responde con el texto [FOTOS:${p.property_code}] en tu mensaje.`
+          ? `\n  Fotos disponibles: Sí (${uniqueImages.length} fotos). Si el cliente pide fotos, responde con el texto [FOTOS:${p.property_code}] en tu mensaje.`
           : '\n  Fotos disponibles: No';
         
         const meta = (p as any).metadata || {};
         const constructionYear = (p as any).construction_year ?? meta.construction_year ?? null;
         const estrato = (p as any).stratum ?? meta.estrato ?? null;
-        const descriptionText = (p as any).description ? `\n  DescripciÃ³n: ${(p as any).description}` : '';
-        const locationUrlText = (p as any).location_url ? `\n  UbicaciÃ³n (mapa): ${(p as any).location_url}` : '';
-        const constructionYearText = constructionYear ? `\n  AÃ±o de construcciÃ³n: ${constructionYear}` : '';
+        const descriptionText = (p as any).description ? `\n  Descripción: ${(p as any).description}` : '';
+        const locationUrlText = (p as any).location_url ? `\n  Ubicación (mapa): ${(p as any).location_url}` : '';
+        const constructionYearText = constructionYear ? `\n  Año de construcción: ${constructionYear}` : '';
         const estratoText = estrato !== null && estrato !== undefined ? `\n  Estrato: ${estrato}` : '';
 
-        return `- ${p.title} (CÃ³digo: ${p.property_code})
+        return `- ${p.title} (Código: ${p.property_code})
    Zona: ${p.zone} | Precio: $${p.price.toLocaleString()} ${p.currency} | Tipo: ${p.operation_type}
    Tipo de propiedad: ${p.property_type || 'No especificado'} | Estatus: ${p.status}
-   ${p.address ? `DirecciÃ³n: ${p.address}` : ''}${descriptionText}${locationUrlText}${constructionYearText}${estratoText}
+   ${p.address ? `Dirección: ${p.address}` : ''}${descriptionText}${locationUrlText}${constructionYearText}${estratoText}
    ${creditText}${maintenanceText ? ` | ${maintenanceText}` : ''}
    ${visitText ? `Disponibilidad de visitas: ${visitText}` : ''}
-   ${p.youtube_url ? `Video de YouTube disponible: SÃ­ â€” Enlace: ${p.youtube_url}` : 'Video de YouTube disponible: No'}${portalIdsText}${aiPromptText}${photosText}${faqText}`;
+   ${p.youtube_url ? `Video de YouTube disponible: Sí — Enlace: ${p.youtube_url}` : 'Video de YouTube disponible: No'}${portalIdsText}${aiPromptText}${photosText}${faqText}`;
       }).join('\n\n');
 
       propertiesContext = `\nPROPIEDADES DISPONIBLES:\n${propertyDetails}`;
@@ -456,20 +456,20 @@ serve(async (req) => {
       'asesor', 'ejecutivo'
     ];
     const frustrationTriggers = [
-      'esto no sirve', 'no me ayudas', 'eres inutil', 'eres inÃºtil', 'incompetente',
-      'urgente', 'es una emergencia', 'llevo horas', 'llevo dÃ­as', 'llevo dias',
+      'esto no sirve', 'no me ayudas', 'eres inutil', 'eres inútil', 'incompetente',
+      'urgente', 'es una emergencia', 'llevo horas', 'llevo días', 'llevo dias',
       'estoy enojado', 'estoy enojada', 'estoy molesto', 'estoy molesta',
       'estoy harto', 'estoy harta', 'estoy furioso', 'estoy furiosa',
-      'estoy cabreado', 'estoy cabreada', 'quÃ© frustrante', 'que frustrante',
-      'me tienen harto', 'me tienen harta', 'esto es ridÃ­culo', 'esto es ridiculo',
-      'pÃ©simo servicio', 'pesimo servicio', 'mal servicio', 'una vergÃ¼enza', 'una verguenza',
+      'estoy cabreado', 'estoy cabreada', 'qué frustrante', 'que frustrante',
+      'me tienen harto', 'me tienen harta', 'esto es ridículo', 'esto es ridiculo',
+      'pésimo servicio', 'pesimo servicio', 'mal servicio', 'una vergüenza', 'una verguenza',
       'no me sirve', 'estoy frustrado', 'estoy frustrada', 'no entiendes nada',
-      'coÃ±o', 'joder', 'mierda', 'estafa', 'estafadores'
+      'coño', 'joder', 'mierda', 'estafa', 'estafadores'
     ];
     const humanRequestExtras = [
       'hablar con humano', 'hablar con un humano', 'una persona', 'con una persona',
-      'eres una maquina', 'eres una mÃ¡quina', 'eres un bot', 'eres robot',
-      'quiero un humano', 'pasame con', 'pÃ¡same con', 'comunicame con', 'comunÃ­came con',
+      'eres una maquina', 'eres una máquina', 'eres un bot', 'eres robot',
+      'quiero un humano', 'pasame con', 'pásame con', 'comunicame con', 'comunícame con',
       'me atienda alguien', 'que me atienda', 'alguien que me atienda'
     ];
     humanRequestTriggers.push(...humanRequestExtras);
@@ -571,13 +571,13 @@ serve(async (req) => {
       'visitar el inmueble', 'visitar la propiedad', 'visitar la casa', 'visitar el depa',
       'ver el inmueble', 'ver la propiedad', 'ver la casa', 'ver el departamento',
       'conocer el inmueble', 'conocer la propiedad', 'conocer la casa',
-      'tendrias espacio', 'tendrÃ­as espacio', 'tendrian espacio', 'tendrÃ­an espacio',
+      'tendrias espacio', 'tendrías espacio', 'tendrian espacio', 'tendrían espacio',
       'tienen espacio', 'tienen disponibilidad',
-      'cuando puedo ir', 'cuÃ¡ndo puedo ir', 'cuando puedo pasar', 'cuÃ¡ndo puedo pasar',
-      'me gustaria visitarla', 'me gustarÃ­a visitarla', 'me gustaria verla', 'me gustarÃ­a verla',
+      'cuando puedo ir', 'cuándo puedo ir', 'cuando puedo pasar', 'cuándo puedo pasar',
+      'me gustaria visitarla', 'me gustaría visitarla', 'me gustaria verla', 'me gustaría verla',
       'horario para visita', 'horario para ver',
-      'dia para visitar', 'dÃ­a para visitar', 'dia para ver', 'dÃ­a para ver',
-      'podemos agendar', 'podrÃ­amos agendar', 'podriamos agendar',
+      'dia para visitar', 'día para visitar', 'dia para ver', 'día para ver',
+      'podemos agendar', 'podríamos agendar', 'podriamos agendar',
       'hacer una cita', 'programar una visita', 'programar visita',
       'quiero ir a ver', 'quisiera visitar', 'quisiera ver',
     ];
@@ -608,8 +608,8 @@ serve(async (req) => {
       });
 
       const visitMessage = aiSettings.use_customer_name && contact_name
-        ? `Â¡Con gusto, ${contact_name}! Un asesor se pondrÃ¡ en contacto contigo en breve para coordinar tu visita. ðŸ `
-        : 'Â¡Con gusto! Un asesor se pondrÃ¡ en contacto contigo en breve para coordinar tu visita. ðŸ ';
+        ? `¡Con gusto, ${contact_name}! Un asesor se pondrá en contacto contigo en breve para coordinar tu visita. ðŸ `
+        : '¡Con gusto! Un asesor se pondrá en contacto contigo en breve para coordinar tu visita. ðŸ ';
 
       return new Response(JSON.stringify({
         action: 'escalate',
@@ -686,22 +686,22 @@ serve(async (req) => {
 
     // Build the AI prompt
     const toneInstructions = {
-      cordial: 'SÃ© amable y respetuoso en todo momento.',
-      professional: 'MantÃ©n un tono profesional y directo.',
-      friendly: 'SÃ© casual y cercano, como si hablaras con un amigo.',
+      cordial: 'Sé amable y respetuoso en todo momento.',
+      professional: 'Mantén un tono profesional y directo.',
+      friendly: 'Sé casual y cercano, como si hablaras con un amigo.',
       adaptive: 'Adapta tu tono al estilo del cliente.',
     };
 
     const emojiInstruction = aiSettings.use_emojis 
-      ? `Puedes usar hasta ${aiSettings.max_emojis_per_message} emoji(s) por mensaje. NUNCA superes ese lÃ­mite.`
-      : 'PROHIBIDO usar emojis. No incluyas ningÃºn emoji en tu respuesta bajo ninguna circunstancia.';
+      ? `Puedes usar hasta ${aiSettings.max_emojis_per_message} emoji(s) por mensaje. NUNCA superes ese límite.`
+      : 'PROHIBIDO usar emojis. No incluyas ningún emoji en tu respuesta bajo ninguna circunstancia.';
 
     const nameInstruction = aiSettings.use_customer_name && contact_name
       ? `El nombre del cliente es ${contact_name}. Úsalo MÁXIMO una vez por conversación (al inicio o cuando sea muy natural). NO lo repitas en cada mensaje — en una conversación real nadie dice el nombre de su interlocutor constantemente.`
       : '';
 
     const identityInstruction = aiSettings.never_reveal_ai
-      ? 'NUNCA reveles que eres una IA o asistente virtual. Siempre actÃºa como un asistente humano.'
+      ? 'NUNCA reveles que eres una IA o asistente virtual. Siempre actúa como un asistente humano.'
       : '';
 
     const knowledgeContext = knowledgeBase.length > 0
@@ -759,12 +759,12 @@ serve(async (req) => {
     const languageInstr = LANGUAGE_TEXT[aiSettings.language || 'es'] || LANGUAGE_TEXT.es;
     const maxLen = aiSettings.max_message_length || 320;
     const regionalBlock = `\nCONTEXTO REGIONAL (OBLIGATORIO):
-- PaÃ­s del cliente: ${regionInfo.country}
+- País del cliente: ${regionInfo.country}
 - Moneda local: ${regionInfo.currency}
 - ${regionInfo.modismos}
 - ${formalityInstr}
 - ${languageInstr}
-- LONGITUD MÃXIMA: cada mensaje debe tener mÃ¡ximo ${maxLen} caracteres. SÃ© breve, claro y directo.`;
+- LONGITUD MÁXIMA: cada mensaje debe tener máximo ${maxLen} caracteres. Sé breve, claro y directo.`;
 
     // Build dynamic handoff rules based on tenant settings
     const handoffRulesList: string[] = [];
@@ -808,21 +808,21 @@ ${regionalBlock}
 FECHA Y HORA ACTUAL (dato en tiempo real — úsalo si el cliente pregunta la hora o fecha):
 ${nowLocal}
 
-REGLA CRÃTICA: NUNCA inventes, supongas o alucines informaciÃ³n que no estÃ© EXACTAMENTE en los datos proporcionados abajo. Si un dato no aparece explÃ­citamente (como metros cuadrados, nÃºmero de recÃ¡maras, precio, amenidades), NO lo menciones. Solo comparte la informaciÃ³n que aparece textualmente en este prompt.
+REGLA CRÍTICA: NUNCA inventes, supongas o alucines información que no esté EXACTAMENTE en los datos proporcionados abajo. Si un dato no aparece explícitamente (como metros cuadrados, número de recámaras, precio, amenidades), NO lo menciones. Solo comparte la información que aparece textualmente en este prompt.
 
 INSTRUCCIONES:
 - ${toneInstructions[aiSettings.tone as keyof typeof toneInstructions] || toneInstructions.professional}
 - ${emojiInstruction}
 - ${nameInstruction}
 - ${identityInstruction}
-- Responde ÃšNICAMENTE con informaciÃ³n que aparezca textualmente en la BASE DE CONOCIMIENTO o en las PROPIEDADES DISPONIBLES de este prompt.
-- Si el cliente pregunta por una propiedad, busca en PROPIEDADES DISPONIBLES. Si la propiedad tiene un campo "Instrucciones especiales" o "ai_prompt", usa ESA informaciÃ³n como la descripciÃ³n principal de la propiedad.
-- NUNCA inventes caracterÃ­sticas, precios, medidas o amenidades que no estÃ©n en los datos.
+- Responde ÚNICAMENTE con información que aparezca textualmente en la BASE DE CONOCIMIENTO o en las PROPIEDADES DISPONIBLES de este prompt.
+- Si el cliente pregunta por una propiedad, busca en PROPIEDADES DISPONIBLES. Si la propiedad tiene un campo "Instrucciones especiales" o "ai_prompt", usa ESA información como la descripción principal de la propiedad.
+- NUNCA inventes características, precios, medidas o amenidades que no estén en los datos.
 - Si no encuentras la respuesta exacta en los datos proporcionados, responde con la frase exacta: "[ESCALAR]"
-- FOTOS DE PROPIEDADES: Si el cliente pide fotos/imÃ¡genes de una propiedad y la propiedad tiene "Fotos disponibles: SÃ­", incluye el marcador [FOTOS:CÃ“DIGO_PROPIEDAD] en tu respuesta (ejemplo: [FOTOS:RVTMYA-EMX-0001]). Si NO tiene fotos, indica que por el momento no tienes fotos disponibles pero puedes agendar una visita. NUNCA incluyas el marcador [FOTOS:...] si la propiedad no tiene fotos.
-- VIDEOS DE PROPIEDADES: Si el cliente pregunta por videos de una propiedad y la propiedad tiene un campo "Video" con un enlace de YouTube, DEBES compartir ese enlace al cliente. Ejemplo: "Â¡Claro! AquÃ­ tienes el video de la propiedad: [URL del video]". Si NO tiene video, indica que por el momento no cuentas con video pero ofrece enviar fotos (si las tiene) o agendar una visita.
-- DETECCIÃ“N DE PROPIEDAD DE INTERÃ‰S (OBLIGATORIO): SIEMPRE que tu respuesta mencione, describa o proporcione informaciÃ³n sobre una propiedad especÃ­fica, DEBES incluir el marcador [PROPIEDAD_INTERES:CÃ“DIGO_PROPIEDAD] al final de tu mensaje. Esto es OBLIGATORIO sin excepciÃ³n. Ejemplos de cuÃ¡ndo incluirlo: el cliente pregunta por una propiedad, tÃº describes una propiedad, envÃ­as fotos de una propiedad, compartes precio/ubicaciÃ³n de una propiedad. Si mencionas varias propiedades, usa el cÃ³digo de la propiedad principal de la conversaciÃ³n.
-- MantÃ©n las respuestas concisas y Ãºtiles.
+- FOTOS DE PROPIEDADES: Si el cliente pide fotos/imágenes de una propiedad y la propiedad tiene "Fotos disponibles: Sí", incluye el marcador [FOTOS:CÓDIGO_PROPIEDAD] en tu respuesta (ejemplo: [FOTOS:RVTMYA-EMX-0001]). Si NO tiene fotos, indica que por el momento no tienes fotos disponibles pero puedes agendar una visita. NUNCA incluyas el marcador [FOTOS:...] si la propiedad no tiene fotos.
+- VIDEOS DE PROPIEDADES: Si el cliente pregunta por videos de una propiedad y la propiedad tiene un campo "Video" con un enlace de YouTube, DEBES compartir ese enlace al cliente. Ejemplo: "¡Claro! Aquí tienes el video de la propiedad: [URL del video]". Si NO tiene video, indica que por el momento no cuentas con video pero ofrece enviar fotos (si las tiene) o agendar una visita.
+- DETECCIÓN DE PROPIEDAD DE INTERÉS (OBLIGATORIO): SIEMPRE que tu respuesta mencione, describa o proporcione información sobre una propiedad específica, DEBES incluir el marcador [PROPIEDAD_INTERES:CÓDIGO_PROPIEDAD] al final de tu mensaje. Esto es OBLIGATORIO sin excepción. Ejemplos de cuándo incluirlo: el cliente pregunta por una propiedad, tú describes una propiedad, envías fotos de una propiedad, compartes precio/ubicación de una propiedad. Si mencionas varias propiedades, usa el código de la propiedad principal de la conversación.
+- Mantén las respuestas concisas y útiles.
 ${handoffRulesBlock}
 ${behaviorInstruction}
 
@@ -835,7 +835,7 @@ ${propertiesContext}`;
     
     for (let attempt = 0; attempt <= CONFIG.AI_MAX_RETRIES; attempt++) {
       try {
-        console.log(`ðŸ¤– AI API call attempt ${attempt + 1}...`);
+        console.log(`🤖 AI API call attempt ${attempt + 1}...`);
         
         const aiResponse = await withTimeout(
           fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -871,7 +871,7 @@ ${propertiesContext}`;
             return new Response(JSON.stringify({ 
               action: 'error',
               error: 'rate_limit',
-              message: 'LÃ­mite de solicitudes excedido' 
+              message: 'Límite de solicitudes excedido' 
             }), {
               status: 429,
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -884,15 +884,15 @@ ${propertiesContext}`;
         const aiData = await aiResponse.json();
         generatedText = aiData.choices?.[0]?.message?.content || '';
         aiCallSuccess = true;
-        console.log('âœ… AI Response received:', generatedText.substring(0, 100) + '...');
+        console.log('✅ AI Response received:', generatedText.substring(0, 100) + '...');
         break;
         
       } catch (aiError) {
-        console.warn(`âš ï¸ AI call attempt ${attempt + 1} failed:`, aiError);
+        console.warn(`⚠️ AI call attempt ${attempt + 1} failed:`, aiError);
         
         if (attempt < CONFIG.AI_MAX_RETRIES) {
           const backoff = CONFIG.AI_RETRY_DELAY_MS * Math.pow(2, attempt);
-          console.log(`â³ Retrying AI call in ${backoff}ms...`);
+          console.log(`⏳ Retrying AI call in ${backoff}ms...`);
           await delay(backoff);
         }
       }
@@ -900,7 +900,7 @@ ${propertiesContext}`;
 
     // If AI call failed after retries
     if (!aiCallSuccess) {
-      console.error('âŒ AI call failed after all retries');
+      console.error('❌Œ AI call failed after all retries');
       
       // Mark as error and needs_human
       await supabase
@@ -981,7 +981,7 @@ ${propertiesContext}`;
       });
     }
 
-    // Check for [SEGUIMIENTO_HUMANO] marker â€” AI determined handoff is needed
+    // Check for [SEGUIMIENTO_HUMANO] marker — AI determined handoff is needed
     const needsHandoff = generatedText.includes('[SEGUIMIENTO_HUMANO]');
 
     // Parse [FOTOS:CODE] markers and extract image URLs

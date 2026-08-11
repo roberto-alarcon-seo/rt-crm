@@ -44,6 +44,55 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.9.0",
+    date: "2026-08-11",
+    headline: "Responder BAJA ya funciona",
+    changes: [
+      {
+        type: "fix",
+        area: "Consentimiento",
+        description:
+          "Responder \"BAJA\" por WhatsApp ya da de baja al contacto: se registra la baja, se apaga la IA de esa conversación y se envía la confirmación. Antes las palabras de baja no las leía nadie y responder BAJA no tenía ningún efecto.",
+      },
+      {
+        type: "fix",
+        area: "Consentimiento",
+        description:
+          "Las reglas de consentimiento ya se guardan. El botón mostraba \"Reglas guardadas\" sin escribir nada.",
+      },
+      {
+        type: "feature",
+        area: "Consentimiento",
+        description:
+          "Texto de consentimiento, aviso de privacidad y correo para bajas, configurables y mostrados en el chat del sitio web al pedir datos.",
+      },
+      {
+        type: "feature",
+        area: "Consentimiento",
+        description:
+          "Puedes probar una frase y ver si daría de baja al contacto antes de guardar. La detección no se activa a media palabra: \"bajarle al presupuesto\" no da de baja a nadie.",
+      },
+      {
+        type: "feature",
+        area: "WhatsApp",
+        description:
+          "Generador de enlaces de campaña: el origen de la campaña viaja dentro del mensaje y queda registrado en la atribución del lead, en lugar de perderse al abrir WhatsApp.",
+      },
+      {
+        type: "fix",
+        area: "Contactos",
+        description:
+          "Ya se pueden borrar contactos que entraron por el chat del sitio o por un enlace de campaña. Su registro de atribución impedía el borrado.",
+      },
+      {
+        type: "fix",
+        area: "Inbox",
+        description:
+          "Los mensajes del agente ya no salen con caracteres rotos: los acentos y los puntos suspensivos del texto recortado estaban mal codificados.",
+      },
+    ],
+  },
+  {
     version: "1.8.0",
     date: "2026-08-11",
     headline: "El contenido comercial ya está cargado",

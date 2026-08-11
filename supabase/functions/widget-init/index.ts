@@ -105,6 +105,12 @@ serve(async (req) => {
 
     if (!primaryColor) primaryColor = "#6366F1";
 
+    const { data: consent } = await supabase
+      .from("tenant_consent_settings")
+      .select("consent_text, privacy_policy_url, show_consent_in_widget")
+      .eq("tenant_id", settings.tenant_id)
+      .maybeSingle();
+
     return new Response(JSON.stringify({
       session_token: session.session_token,
       config: {
@@ -124,6 +130,10 @@ serve(async (req) => {
         capture_email: settings.capture_email,
         capture_phone: settings.capture_phone,
         initial_suggestions: settings.initial_suggestions || [],
+        // Texto legal del §7.3: el widget capturaba nombre, correo y teléfono
+        // sin mostrar ningún aviso de tratamiento de datos.
+        consent_text: consent?.show_consent_in_widget ? (consent.consent_text ?? "") : "",
+        privacy_policy_url: consent?.show_consent_in_widget ? (consent.privacy_policy_url ?? "") : "",
       },
       messages: session.messages || [],
     }), {
