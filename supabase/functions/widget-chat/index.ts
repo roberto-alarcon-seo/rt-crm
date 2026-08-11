@@ -183,7 +183,7 @@ serve(async (req) => {
     const shouldConvert = !contactId && effectiveName && (effectiveEmail || effectivePhone);
 
     if (shouldConvert) {
-      const { data: contact } = await supabase
+      const { data: contact, error: contactError } = await supabase
         .from("contacts")
         .insert({
           tenant_id: tenantId,
@@ -201,6 +201,12 @@ serve(async (req) => {
         })
         .select("id")
         .single();
+
+      // Sin este log el fallo era invisible: el lead no se creaba, la sesión
+      // seguía en "active" y el widget respondía como si todo estuviera bien.
+      if (contactError) {
+        console.error("[widget-chat] no se pudo crear el contacto:", contactError);
+      }
 
       if (contact) {
         contactId = contact.id;

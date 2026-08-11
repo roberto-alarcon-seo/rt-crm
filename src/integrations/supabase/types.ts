@@ -412,35 +412,53 @@ export type Database = {
         Row: {
           answer: string
           category: Database["public"]["Enums"]["kb_category"]
+          collection: string | null
           created_at: string
+          entry_type: string
+          file_name: string | null
+          file_url: string | null
           id: string
           is_active: boolean
+          media_type: string | null
           question: string
           tags: string[] | null
           tenant_id: string
           updated_at: string
+          url: string | null
         }
         Insert: {
           answer: string
           category?: Database["public"]["Enums"]["kb_category"]
+          collection?: string | null
           created_at?: string
+          entry_type?: string
+          file_name?: string | null
+          file_url?: string | null
           id?: string
           is_active?: boolean
+          media_type?: string | null
           question: string
           tags?: string[] | null
           tenant_id: string
           updated_at?: string
+          url?: string | null
         }
         Update: {
           answer?: string
           category?: Database["public"]["Enums"]["kb_category"]
+          collection?: string | null
           created_at?: string
+          entry_type?: string
+          file_name?: string | null
+          file_url?: string | null
           id?: string
           is_active?: boolean
+          media_type?: string | null
           question?: string
           tags?: string[] | null
           tenant_id?: string
           updated_at?: string
+          url?: string | null
         }
         Relationships: [
           {
@@ -2919,6 +2937,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      kb_collections: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number | null
+          tenant_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+          tenant_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_collections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       master_templates: {
         Row: {
@@ -5979,6 +6038,166 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "wallets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      widget_sessions: {
+        Row: {
+          ai_turns: number
+          contact_id: string | null
+          conversation_id: string | null
+          created_at: string
+          id: string
+          landing_page: string | null
+          lead_captured_at: string | null
+          messages: Json
+          referrer: string | null
+          session_token: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          visitor_email: string | null
+          visitor_name: string | null
+          visitor_phone: string | null
+        }
+        Insert: {
+          ai_turns?: number
+          contact_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          landing_page?: string | null
+          lead_captured_at?: string | null
+          messages?: Json
+          referrer?: string | null
+          session_token?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_email?: string | null
+          visitor_name?: string | null
+          visitor_phone?: string | null
+        }
+        Update: {
+          ai_turns?: number
+          contact_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          landing_page?: string | null
+          lead_captured_at?: string | null
+          messages?: Json
+          referrer?: string | null
+          session_token?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_email?: string | null
+          visitor_name?: string | null
+          visitor_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "widget_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      widget_settings: {
+        Row: {
+          bubble_icon: string
+          capture_email: boolean
+          capture_name: boolean
+          capture_phone: boolean
+          created_at: string
+          cta_buttons: Json
+          display_mode: string
+          enabled: boolean
+          greeting_message: string
+          greeting_name: string
+          header_subtitle: string
+          id: string
+          initial_suggestions: Json
+          position: string
+          powered_by_text: string
+          primary_color: string | null
+          product_chips: Json
+          tenant_id: string
+          theme: string
+          updated_at: string
+          widget_token: string
+        }
+        Insert: {
+          bubble_icon?: string
+          capture_email?: boolean
+          capture_name?: boolean
+          capture_phone?: boolean
+          created_at?: string
+          cta_buttons?: Json
+          display_mode?: string
+          enabled?: boolean
+          greeting_message?: string
+          greeting_name?: string
+          header_subtitle?: string
+          id?: string
+          initial_suggestions?: Json
+          position?: string
+          powered_by_text?: string
+          primary_color?: string | null
+          product_chips?: Json
+          tenant_id: string
+          theme?: string
+          updated_at?: string
+          widget_token?: string
+        }
+        Update: {
+          bubble_icon?: string
+          capture_email?: boolean
+          capture_name?: boolean
+          capture_phone?: boolean
+          created_at?: string
+          cta_buttons?: Json
+          display_mode?: string
+          enabled?: boolean
+          greeting_message?: string
+          greeting_name?: string
+          header_subtitle?: string
+          id?: string
+          initial_suggestions?: Json
+          position?: string
+          powered_by_text?: string
+          primary_color?: string | null
+          product_chips?: Json
+          tenant_id?: string
+          theme?: string
+          updated_at?: string
+          widget_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "widget_settings_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: true
             referencedRelation: "tenants"

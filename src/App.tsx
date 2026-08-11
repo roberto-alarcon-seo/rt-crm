@@ -70,6 +70,7 @@ import Support from "./pages/Support";
 import AIAssistant from "./pages/AIAssistant";
 import SettingsSDRAgent from "./pages/settings/SettingsSDRAgent";
 import SettingsOpportunityAgent from "./pages/settings/SettingsOpportunityAgent";
+import SettingsFollowupAgent from "./pages/settings/SettingsFollowupAgent";
 import SettingsConversions from "./pages/settings/SettingsConversions";
 import SettingsWidget from "./pages/settings/SettingsWidget";
 import SettingsPipelines from "./pages/settings/SettingsPipelines";
@@ -110,16 +111,6 @@ const RecoveryHashRedirector = () => {
   }, [location.hash, location.pathname, navigate]);
 
   return null;
-};
-
-// Local inventory management is gated by the `inventory_management` feature flag.
-// When the flag is OFF, the tenant sees a notice (inventory comes from an external source).
-// When the flag is ON, only Manager/Administrador can access the editor.
-const PropertiesRedirect = () => {
-  useEffect(() => {
-    toast.info("El inventario es gestionado desde el sistema externo");
-  }, []);
-  return <Navigate to="/" replace />;
 };
 
 // Restricts global-admin-only routes (Users, Logs) when the logged super admin
@@ -222,9 +213,11 @@ const App = () => (
               <Route path="/settings/ai-config" element={<ProtectedRoute><MainLayout><SettingsAIConfig /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/sdr-agent" element={<ProtectedRoute><MainLayout><SettingsSDRAgent /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/opportunity-agent" element={<ProtectedRoute><MainLayout><SettingsOpportunityAgent /></MainLayout></ProtectedRoute>} />
+              {/* El menú "Agente de Seguimiento" apuntaba aquí pero la ruta redirigía a
+                  Oportunidades, dejando la pantalla real (con su tabla y su cron) inalcanzable. */}
+              <Route path="/settings/followup-agent" element={<ProtectedRoute><MainLayout><SettingsFollowupAgent /></MainLayout></ProtectedRoute>} />
               {/* Legacy RE agent routes — redirect to opportunity agent */}
               <Route path="/settings/captacion-agent" element={<Navigate to="/settings/opportunity-agent" replace />} />
-              <Route path="/settings/followup-agent" element={<Navigate to="/settings/opportunity-agent" replace />} />
               <Route path="/settings/appointment-agent" element={<Navigate to="/settings/sdr-agent" replace />} />
               <Route path="/settings/knowledge-base" element={<ProtectedRoute><MainLayout><SettingsKnowledgeBase /></MainLayout></ProtectedRoute>} />
               <Route path="/settings/knowledge-base/new" element={<ProtectedRoute><MainLayout><KnowledgeBaseEditor /></MainLayout></ProtectedRoute>} />

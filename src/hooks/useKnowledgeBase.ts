@@ -196,7 +196,7 @@ export function useKBCollections() {
       if (!tenantId) return [];
 
       const { data, error } = await supabase
-        .from('kb_collections' as never)
+        .from('kb_collections')
         .select('*')
         .eq('tenant_id', tenantId)
         .order('sort_order')
@@ -218,8 +218,8 @@ export function useCreateKBCollection() {
       if (!tenantId) throw new Error('No tenant');
 
       const { data, error } = await supabase
-        .from('kb_collections' as never)
-        .insert({ ...col, tenant_id: tenantId } as never)
+        .from('kb_collections')
+        .insert({ ...col, tenant_id: tenantId })
         .select()
         .single();
 
@@ -242,7 +242,7 @@ export function useDeleteKBCollection() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('kb_collections' as never)
+        .from('kb_collections')
         .delete()
         .eq('id', id);
 

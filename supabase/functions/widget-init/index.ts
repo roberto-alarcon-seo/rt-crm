@@ -115,7 +115,7 @@ serve(async (req) => {
         position: settings.position,
         display_mode: (settings as Record<string, unknown>).display_mode || "floating",
         bubble_icon: (settings as Record<string, unknown>).bubble_icon || "logo",
-        powered_by_text: (settings as Record<string, unknown>).powered_by_text || "RT CRM",
+        powered_by_text: (settings as Record<string, unknown>).powered_by_text || "Random Truffle",
         cta_buttons: (settings as Record<string, unknown>).cta_buttons || [],
         header_subtitle: (settings as Record<string, unknown>).header_subtitle || "",
         theme: (settings as Record<string, unknown>).theme || "light",

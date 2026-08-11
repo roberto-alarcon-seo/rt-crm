@@ -32,6 +32,15 @@ export interface WidgetStats {
   leads_captured: number;
 }
 
+/**
+ * `product_chips`, `cta_buttons` e `initial_suggestions` viajan como `Json` en el
+ * esquema generado. Aquí se estrecha al contrato real que usan la UI y widget.js.
+ */
+type WidgetSettingsRow = Record<string, unknown>;
+
+const asWidgetSettings = (row: WidgetSettingsRow | null): WidgetSettings | null =>
+  row ? (row as unknown as WidgetSettings) : null;
+
 export function useWidgetSettings() {
   const { profile } = useAuth();
   const tenantId = profile?.tenant_id ?? null;
@@ -45,10 +54,10 @@ export function useWidgetSettings() {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from("widget_settings" as never)
+        .from("widget_settings")
         .select("*")
         .eq("tenant_id", tenantId)
-        .maybeSingle() as { data: WidgetSettings | null; error: { code: string; message: string } | null };
+        .maybeSingle();
 
       if (error) {
         console.error("[useWidgetSettings] fetch error:", error);
@@ -57,20 +66,20 @@ export function useWidgetSettings() {
       }
 
       if (data) {
-        setSettings(data);
+        setSettings(asWidgetSettings(data));
       } else {
         const { data: created, error: insertError } = await supabase
-          .from("widget_settings" as never)
-          .insert({ tenant_id: tenantId } as never)
+          .from("widget_settings")
+          .insert({ tenant_id: tenantId })
           .select()
-          .single() as { data: WidgetSettings | null; error: { code: string; message: string } | null };
+          .single();
 
         if (insertError) {
           console.error("[useWidgetSettings] insert error:", insertError);
           toast.error(`Error al crear configuración del widget: ${insertError.message}`);
           return;
         }
-        if (created) setSettings(created);
+        if (created) setSettings(asWidgetSettings(created));
       }
     } finally {
       setIsLoading(false);
@@ -82,12 +91,12 @@ export function useWidgetSettings() {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const [{ count: total }, { count: converted }] = await Promise.all([
       supabase
-        .from("widget_sessions" as never)
+        .from("widget_sessions")
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", tenantId)
         .gte("created_at", weekAgo),
       supabase
-        .from("widget_sessions" as never)
+        .from("widget_sessions")
         .select("id", { count: "exact", head: true })
         .eq("tenant_id", tenantId)
         .eq("status", "converted"),
@@ -107,17 +116,17 @@ export function useWidgetSettings() {
       setIsSaving(true);
       try {
         const { data, error } = await supabase
-          .from("widget_settings" as never)
-          .update(updates as never)
+          .from("widget_settings")
+          .update(updates as WidgetSettingsRow)
           .eq("tenant_id", tenantId)
           .select()
-          .single() as { data: WidgetSettings | null; error: { code: string; message: string } | null };
+          .single();
 
         if (error) {
           console.error("[useWidgetSettings] save error:", error);
           throw new Error(error.message);
         }
-        if (data) setSettings(data);
+        if (data) setSettings(asWidgetSettings(data));
         toast.success("Widget guardado");
       } catch (err) {
         toast.error(`Error al guardar: ${err instanceof Error ? err.message : "error desconocido"}`);

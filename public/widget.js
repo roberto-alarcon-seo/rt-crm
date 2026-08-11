@@ -191,7 +191,7 @@
   // ── Chat content HTML (shared between floating and sidebar) ───────────────
   function chatContentHTML(name, iconName, logoUrl, poweredByText, subtitle, ctaButtons, productChips) {
     var avatarHTML = getIconHTML(iconName === 'logo' ? 'logo' : iconName, logoUrl, 22);
-    var creditLabel = poweredByText ? 'Powered by ' + esc(poweredByText) : 'Powered by RT CRM';
+    var creditLabel = poweredByText ? 'Powered by ' + esc(poweredByText) : 'Powered by Random Truffle';
     var subtitleHTML = subtitle
       ? '<div id="rtw-hdr-sub">' + esc(subtitle) + '</div><div id="rtw-online">● En línea</div>'
       : '<div id="rtw-online">● En línea</div>';
@@ -485,7 +485,7 @@
         var logoUrl       = config.logo_url         || null;
         var iconName      = config.bubble_icon      || 'logo';
         var mode          = config.display_mode     || 'floating';
-        var poweredByText = config.powered_by_text  || 'RT CRM';
+        var poweredByText = config.powered_by_text  || 'Random Truffle';
         var subtitle      = config.header_subtitle  || '';
         var ctaButtons    = config.cta_buttons      || [];
         var productChips  = config.product_chips    || [];

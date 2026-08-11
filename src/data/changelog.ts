@@ -44,6 +44,36 @@ export interface Release {
 /** Releases del más reciente al más viejo. La primera debe ser APP_VERSION. */
 export const CHANGELOG: Release[] = [
   {
+    version: "1.5.3",
+    date: "2026-08-11",
+    changes: [
+      {
+        type: "fix",
+        area: "Widget Web",
+        description:
+          "El chat del sitio web ya captura leads. Antes la conversación funcionaba pero el contacto nunca se guardaba y la sesión quedaba sin convertir, sin ningún aviso.",
+      },
+      {
+        type: "fix",
+        area: "Widget Web",
+        description:
+          "La configuración del widget ya se guarda completa: modo de visualización, ícono del botón, tema, subtítulo del header, pie de página, píldoras de producto y botones de acción.",
+      },
+      {
+        type: "fix",
+        area: "Agente de Seguimiento",
+        description:
+          "El menú \"Agente de Seguimiento\" ya abre su pantalla. Antes te mandaba al Agente de Oportunidades y la configuración de seguimiento quedaba fuera de alcance.",
+      },
+      {
+        type: "improvement",
+        area: "Widget Web",
+        description:
+          "El pie del chat dice \"Powered by Random Truffle\" cuando no se ha personalizado, en lugar del nombre interno del sistema.",
+      },
+    ],
+  },
+  {
     version: "1.5.2",
     date: "2026-07-27",
     changes: [
